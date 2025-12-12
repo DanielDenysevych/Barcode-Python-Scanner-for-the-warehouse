@@ -1,5 +1,5 @@
 # Database files
-*equipment.db
+equipment.db
 *.sqlite
 *.sqlite3
 
