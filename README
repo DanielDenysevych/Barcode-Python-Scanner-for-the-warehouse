@@ -1,0 +1,133 @@
+# Equipment Tracker System
+
+Simple warehouse equipment tracking system with QR codes and database storage.
+
+## Features
+- Add equipment and generate QR codes
+- Scan with barcode scanner or mobile camera
+- Automatic check-in/check-out tracking
+- SQLite database (handles 1000+ items easily)
+- Backup and restore functionality
+- Export to CSV
+- Search and filter equipment
+- Real-time status dashboard
+
+## Installation
+
+### Requirements
+- Python 3.7 or higher
+- Any modern web browser
+
+### Setup Instructions
+
+**EASIEST WAY:**
+
+**Windows:** Just double-click `START.bat`
+
+**Mac/Linux:** Double-click `START.sh` (or run `./START.sh` in terminal)
+
+The script will install everything and start the server automatically!
+
+**MANUAL WAY:**
+
+1. **Install Python dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the server:**
+   ```bash
+   python app.py
+   ```
+
+3. **Open your browser and go to:**
+   ```
+   http://localhost:5000
+   ```
+
+That's it! The database will be created automatically on first run.
+
+**IMPORTANT:** Make sure the `templates` folder is in the same directory as `app.py`!
+
+## How to Use
+
+### Adding Equipment
+1. Go to "Add New Equipment" section
+2. Type equipment name (e.g., "Projector-01")
+3. Click "Add Equipment"
+4. Or use "Bulk Add Equipment" to add multiple items at once
+
+### Generating QR Codes
+1. Click "Generate QR Codes for All Equipment"
+2. Print the page to get physical QR codes
+3. Stick them on your equipment
+
+### Scanning Equipment
+
+**With Barcode Scanner:**
+- Click in the "Scan or type equipment code" field
+- Scan the QR code
+- Press Enter or click Submit
+
+**With Mobile Camera:**
+- Click "Use Camera Scanner" button
+- Point camera at QR code
+- It will scan automatically
+
+**Check Out:**
+- First scan asks where the equipment is going
+- Enter event name or location
+
+**Check In:**
+- Second scan brings it back to warehouse automatically
+
+### Backup Your Data
+
+**Export Backup:**
+- Click "Download Backup (JSON)" - saves everything
+- Click "Download as CSV" - for Excel/spreadsheet use
+
+**Restore Backup:**
+- Click "Restore from Backup"
+- Select your JSON backup file
+
+## Database
+
+Your data is stored in `equipment.db` in the same folder as the app.
+
+**To backup manually:** Just copy the `equipment.db` file
+
+**To move to another computer:** 
+1. Copy the entire folder
+2. Run `python app.py` on the new computer
+
+## Accessing from Other Devices
+
+**On your local network:**
+1. Find your computer's IP address (e.g., 192.168.1.100)
+2. On other devices, go to: `http://192.168.1.100:5000`
+3. Now you can scan with phones/tablets on the same network
+
+**Important:** Keep the terminal window open while the server is running!
+
+## Troubleshooting
+
+**Can't access from phone:**
+- Make sure phone and computer are on same WiFi network
+- Check your computer's firewall settings
+- The server must be running (terminal window open)
+
+**Database errors:**
+- Delete `equipment.db` file to start fresh
+- Restore from your backup JSON file
+
+**Camera not working:**
+- Make sure you're using HTTPS or localhost
+- Check browser permissions for camera access
+
+## Tips
+
+- Always make regular backups (download JSON file)
+- Print extra QR codes in case they get damaged
+- Use clear naming: "Projector-01", "Speaker-Main", etc.
+- The database can handle thousands of items with no slowdown
