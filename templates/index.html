@@ -3,15 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipment Tracker</title>
+    <title>Equipment Tracker with Events</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 20px auto;
             padding: 20px;
             background: #f5f5f5;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        
+        .nav-tab {
+            padding: 15px 30px;
+            background: white;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .nav-tab:hover {
+            background: #f0f0f0;
+        }
+        
+        .nav-tab.active {
+            background: #333;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         .section {
@@ -19,6 +53,7 @@
             padding: 20px;
             margin-bottom: 20px;
             border: 1px solid #ddd;
+            border-radius: 5px;
         }
         
         h1 {
@@ -30,7 +65,11 @@
             padding-bottom: 5px;
         }
         
-        input, select, button {
+        h3 {
+            margin-top: 0;
+        }
+        
+        input, select, button, textarea {
             padding: 10px;
             font-size: 16px;
             margin: 5px 0;
@@ -42,15 +81,49 @@
             border: none;
             cursor: pointer;
             margin-right: 10px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
         }
         
         button:hover {
             background: #555;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
         }
         
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        button.secondary {
+            background: #6c757d;
+        }
+        
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        
+        button.danger {
+            background: #dc3545;
+        }
+        
+        button.danger:hover {
+            background: #c82333;
+        }
+        
+        button.success {
+            background: #28a745;
+        }
+        
+        button.success:hover {
+            background: #218838;
         }
         
         table {
@@ -76,6 +149,18 @@
         
         .status-out {
             background: #fff3cd;
+        }
+        
+        .event-planning {
+            background: #cce5ff;
+        }
+        
+        .event-active {
+            background: #fff3cd;
+        }
+        
+        .event-completed {
+            background: #d4edda;
         }
         
         #scanner-container {
@@ -125,6 +210,7 @@
             background: white;
             border: 1px solid #ddd;
             text-align: center;
+            border-radius: 5px;
         }
         
         .stat-number {
@@ -136,114 +222,467 @@
         .stat-label {
             color: #666;
         }
+        
+        .event-card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .event-card:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .event-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .event-meta {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-planning {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .badge-active {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .checklist-item {
+            padding: 15px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .checklist-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Not started - grey border */
+        .checklist-item.not-started {
+            border-left: 5px solid #6c757d;
+            background: #f8f9fa;
+        }
+        
+        /* Checked out - orange/yellow */
+        .checklist-item.checked-out {
+            border-left: 5px solid #ffc107;
+            background: #fff3cd;
+        }
+        
+        /* Fully returned - green */
+        .checklist-item.completed {
+            border-left: 5px solid #28a745;
+            background: #d4edda;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge.not-started {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .status-badge.checked-out {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .status-badge.completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .equipment-select-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .equipment-select-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .equipment-select-item:hover {
+            background: #e9e9e9;
+        }
+        
+        .equipment-select-item.selected {
+            background: #d4edda;
+            border-color: #28a745;
+        }
     </style>
 </head>
 <body>
-    <h1>Warehouse Equipment Tracker</h1>
+    <h1>Equipment Tracker with Events</h1>
 
-    <!-- STATS -->
-    <div class="stats">
-        <div class="stat-card">
-            <div class="stat-label">Total Equipment</div>
-            <div class="stat-number" id="stat-total">0</div>
+    <!-- NAVIGATION TABS -->
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="showTab('equipment')">Equipment</div>
+        <div class="nav-tab" onclick="showTab('events')">Events</div>
+        <div class="nav-tab" onclick="showTab('scan')">Scanner</div>
+    </div>
+
+    <!-- EQUIPMENT TAB -->
+    <div id="equipment-tab" class="tab-content active">
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Equipment</div>
+                <div class="stat-number" id="stat-total">0</div>
+            </div>
+            <div class="stat-card status-in">
+                <div class="stat-label">In Warehouse</div>
+                <div class="stat-number" id="stat-in">0</div>
+            </div>
+            <div class="stat-card status-out">
+                <div class="stat-label">Out at Events</div>
+                <div class="stat-number" id="stat-out">0</div>
+            </div>
         </div>
-        <div class="stat-card status-in">
-            <div class="stat-label">In Warehouse</div>
-            <div class="stat-number" id="stat-in">0</div>
+
+        <!-- ADD NEW EQUIPMENT -->
+        <div class="section">
+            <h2>Add New Equipment</h2>
+            <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., Projector-01)" style="width: 400px;">
+            <button onclick="addEquipment()">Add Equipment</button>
         </div>
-        <div class="stat-card status-out">
-            <div class="stat-label">Out at Events</div>
-            <div class="stat-number" id="stat-out">0</div>
+
+        <!-- BULK IMPORT -->
+        <div class="section">
+            <h2>Bulk Add Equipment</h2>
+            <p>Enter multiple equipment names, one per line:</p>
+            <textarea id="bulk-equipment" rows="5" style="width: 100%; padding: 10px; font-size: 16px;" placeholder="Projector-01&#10;Speaker-A&#10;Laptop-03&#10;..."></textarea>
+            <button onclick="bulkAddEquipment()">Add All</button>
+        </div>
+
+        <!-- BACKUP/RESTORE -->
+        <div class="section">
+            <h2>Backup & Restore</h2>
+            <button onclick="exportData()">Download Backup (JSON)</button>
+            <button onclick="exportCSV()">Download as CSV</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData()">
+            <button onclick="document.getElementById('import-file').click()">Restore from Backup</button>
+        </div>
+
+        <!-- GENERATE QR CODES -->
+        <div class="section">
+            <h2>Generate QR Codes</h2>
+            <button onclick="generateAllQRCodes()">Generate QR Codes for All Equipment</button>
+            <button onclick="window.print()" id="print-btn" class="hidden">Print QR Codes</button>
+            <div id="qr-codes-container"></div>
+        </div>
+
+        <!-- EQUIPMENT LIST -->
+        <div class="section">
+            <h2>All Equipment</h2>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="search-box" placeholder="Search equipment..." style="width: 300px;" onkeyup="filterEquipment()">
+                <select id="filter-status" onchange="filterEquipment()" style="width: 150px;">
+                    <option value="ALL">All Status</option>
+                    <option value="IN">In Warehouse</option>
+                    <option value="OUT">Out at Event</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="equipment-list"></tbody>
+            </table>
         </div>
     </div>
 
-    <!-- SCAN SECTION -->
-    <div class="section">
-        <h2>Scan Equipment</h2>
-        
-        <!-- Manual/Barcode Scanner Input -->
-        <div>
-            <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus style="width: 400px;">
-            <button onclick="processManualScan()">Submit</button>
+    <!-- EVENTS TAB -->
+    <div id="events-tab" class="tab-content">
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Events Management</h2>
+                <button class="success" onclick="showCreateEventModal()">+ Create New Event</button>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <select id="event-filter-status" onchange="filterEvents()" style="width: 200px;">
+                    <option value="ALL">All Events</option>
+                    <option value="PLANNING">Planning</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="COMPLETED">Completed</option>
+                </select>
+            </div>
+            
+            <div id="events-list"></div>
         </div>
-        
-        <!-- Camera Scanner -->
-        <div style="margin-top: 20px;">
-            <button onclick="startCameraScanner()">Use Camera Scanner</button>
-            <button onclick="stopCameraScanner()" class="hidden" id="stop-camera-btn">Stop Camera</button>
+    </div>
+
+    <!-- SCAN TAB -->
+    <div id="scan-tab" class="tab-content">
+        <!-- SCAN SECTION -->
+        <div class="section">
+            <h2>Scan Equipment</h2>
+            
+            <div class="form-group">
+                <label>Select Event (Optional):</label>
+                <select id="scan-event-select" style="width: 400px;">
+                    <option value="">No Event (Manual Check In/Out)</option>
+                </select>
+            </div>
+            
+            <!-- Manual/Barcode Scanner Input -->
+            <div>
+                <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus style="width: 400px;">
+                <button onclick="processManualScan()">Submit</button>
+            </div>
+            
+            <!-- Camera Scanner -->
+            <div style="margin-top: 20px;">
+                <button onclick="startCameraScanner()">Use Camera Scanner</button>
+                <button onclick="stopCameraScanner()" class="hidden" id="stop-camera-btn">Stop Camera</button>
+            </div>
+            <div id="scanner-container" class="hidden"></div>
+            
+            <div id="scan-result" class="hidden"></div>
         </div>
-        <div id="scanner-container" class="hidden"></div>
-        
-        <div id="scan-result" class="hidden"></div>
     </div>
 
-    <!-- ADD NEW EQUIPMENT -->
-    <div class="section">
-        <h2>Add New Equipment</h2>
-        <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., Projector-01)" style="width: 400px;">
-        <button onclick="addEquipment()">Add Equipment</button>
-    </div>
-
-    <!-- BULK IMPORT -->
-    <div class="section">
-        <h2>Bulk Add Equipment</h2>
-        <p>Enter multiple equipment names, one per line:</p>
-        <textarea id="bulk-equipment" rows="5" style="width: 100%; padding: 10px; font-size: 16px;" placeholder="Projector-01&#10;Speaker-A&#10;Laptop-03&#10;..."></textarea>
-        <button onclick="bulkAddEquipment()">Add All</button>
-    </div>
-
-    <!-- BACKUP/RESTORE -->
-    <div class="section">
-        <h2>Backup & Restore</h2>
-        <button onclick="exportData()">Download Backup (JSON)</button>
-        <button onclick="exportCSV()">Download as CSV</button>
-        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData()">
-        <button onclick="document.getElementById('import-file').click()">Restore from Backup</button>
-    </div>
-
-    <!-- GENERATE QR CODES -->
-    <div class="section">
-        <h2>Generate QR Codes</h2>
-        <button onclick="generateAllQRCodes()">Generate QR Codes for All Equipment</button>
-        <button onclick="window.print()" id="print-btn" class="hidden">Print QR Codes</button>
-        <div id="qr-codes-container"></div>
-    </div>
-
-    <!-- EQUIPMENT LIST -->
-    <div class="section">
-        <h2>All Equipment</h2>
-        <div style="margin-bottom: 10px;">
-            <input type="text" id="search-box" placeholder="Search equipment..." style="width: 300px;" onkeyup="filterEquipment()">
-            <select id="filter-status" onchange="filterEquipment()" style="width: 150px;">
-                <option value="ALL">All Status</option>
-                <option value="IN">In Warehouse</option>
-                <option value="OUT">Out at Event</option>
-            </select>
+    <!-- CREATE/EDIT EVENT MODAL -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEventModal()">&times;</span>
+            <h2 id="event-modal-title">Create New Event</h2>
+            
+            <form id="event-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Event Name*</label>
+                    <input type="text" id="event-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Event Type*</label>
+                    <select id="event-type" required>
+                        <option value="">Select Type</option>
+                        <option value="Corporate Conference">Corporate Conference</option>
+                        <option value="Wedding">Wedding</option>
+                        <option value="Concert">Concert</option>
+                        <option value="Sports Event">Sports Event</option>
+                        <option value="Trade Show">Trade Show</option>
+                        <option value="Festival">Festival</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Event Date*</label>
+                    <input type="date" id="event-date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="event-location" placeholder="Event venue or address">
+                </div>
+                
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="event-notes" rows="3" placeholder="Additional notes about the event"></textarea>
+                </div>
+                
+                <button type="button" onclick="saveEvent()" class="success">Save Event</button>
+                <button type="button" onclick="closeEventModal()" class="secondary">Cancel</button>
+            </form>
         </div>
-        <table id="equipment-table">
-            <thead>
-                <tr>
-                    <th>Equipment ID</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Location/Event</th>
-                    <th>Last Updated</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="equipment-list">
-            </tbody>
-        </table>
+    </div>
+
+    <!-- EVENT DETAILS MODAL -->
+    <div id="event-details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEventDetailsModal()">&times;</span>
+            <div id="event-details-content"></div>
+        </div>
+    </div>
+
+    <!-- ADD EQUIPMENT TO EVENT MODAL -->
+    <div id="add-equipment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddEquipmentModal()">&times;</span>
+            <h2>Add Equipment to Event</h2>
+            
+            <input type="text" id="equipment-search" placeholder="Search equipment..." style="width: 100%; margin-bottom: 10px;" onkeyup="searchEquipmentForEvent()">
+            
+            <div class="equipment-select-list" id="equipment-select-list"></div>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="addSelectedEquipmentToEvent()" class="success">Add Selected Equipment</button>
+                <button onclick="closeAddEquipmentModal()" class="secondary">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script>
         let equipment = [];
+        let events = [];
+        let currentEvent = null;
+        let currentEventId = null;
+        let selectedEquipment = new Set();
         let html5QrCode = null;
 
-        // Initialize - load equipment from server
-        loadEquipment();
+        // Initialize
+        window.onload = function() {
+            loadEquipment();
+            loadEvents();
+        };
 
-        // Load all equipment from server
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data if needed
+            if (tabName === 'events') {
+                loadEvents();
+            } else if (tabName === 'scan') {
+                loadEventsForScan();
+            }
+        }
+
+        // ==================== EQUIPMENT FUNCTIONS ====================
+        
         async function loadEquipment() {
             try {
                 const response = await fetch('/api/equipment');
@@ -255,18 +694,6 @@
             }
         }
 
-        // Update statistics
-        function updateStats() {
-            const total = equipment.length;
-            const inWarehouse = equipment.filter(eq => eq.status === 'IN').length;
-            const out = equipment.filter(eq => eq.status === 'OUT').length;
-            
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-in').textContent = inWarehouse;
-            document.getElementById('stat-out').textContent = out;
-        }
-
-        // Add new equipment
         async function addEquipment() {
             const name = document.getElementById('new-equipment-name').value.trim();
             if (!name) {
@@ -280,10 +707,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name })
                 });
-                
+
                 const data = await response.json();
+                
                 if (response.ok) {
-                    showMessage('Equipment added: ' + name, 'success');
+                    showMessage(data.message, 'success');
                     document.getElementById('new-equipment-name').value = '';
                     loadEquipment();
                 } else {
@@ -294,7 +722,6 @@
             }
         }
 
-        // Bulk add equipment
         async function bulkAddEquipment() {
             const text = document.getElementById('bulk-equipment').value.trim();
             if (!text) {
@@ -303,65 +730,62 @@
             }
 
             const names = text.split('\n').filter(name => name.trim());
-            let added = 0;
             
             for (const name of names) {
                 try {
-                    const response = await fetch('/api/equipment', {
+                    await fetch('/api/equipment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: name.trim() })
                     });
-                    if (response.ok) added++;
                 } catch (error) {
-                    console.error('Error adding ' + name, error);
+                    console.error('Error adding:', name, error);
                 }
             }
 
-            showMessage(`Added ${added} items successfully`, 'success');
+            showMessage(`Added ${names.length} equipment items`, 'success');
             document.getElementById('bulk-equipment').value = '';
             loadEquipment();
         }
 
-        // Process manual/barcode scanner input
-        function processManualScan() {
-            const code = document.getElementById('manual-code').value.trim();
-            if (!code) return;
-
-            processCode(code);
-            document.getElementById('manual-code').value = '';
-            document.getElementById('manual-code').focus();
+        function updateStats() {
+            const total = equipment.length;
+            const inWarehouse = equipment.filter(eq => eq.status === 'IN').length;
+            const out = equipment.filter(eq => eq.status === 'OUT').length;
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-in').textContent = inWarehouse;
+            document.getElementById('stat-out').textContent = out;
         }
 
-        // Allow Enter key for manual input
-        document.getElementById('manual-code').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                processManualScan();
+        // Manual scan
+        function processManualScan() {
+            const code = document.getElementById('manual-code').value.trim();
+            if (code) {
+                processCode(code);
+                document.getElementById('manual-code').value = '';
             }
-        });
+        }
 
-        // Start camera scanner
+        // Camera scanner
         function startCameraScanner() {
-            document.getElementById('scanner-container').classList.remove('hidden');
-            document.getElementById('stop-camera-btn').classList.remove('hidden');
-            
             html5QrCode = new Html5Qrcode("scanner-container");
+            
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 (decodedText) => {
                     processCode(decodedText);
                     stopCameraScanner();
-                },
-                (error) => {
-                    // Ignore errors during scanning
                 }
-            ).catch(err => {
-                showMessage('Unable to start camera: ' + err, 'error');
+            ).then(() => {
+                document.getElementById('scanner-container').classList.remove('hidden');
+                document.getElementById('stop-camera-btn').classList.remove('hidden');
+            }).catch(err => {
+                showMessage('Error starting camera: ' + err, 'error');
             });
         }
 
-        // Stop camera scanner
         function stopCameraScanner() {
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
@@ -374,19 +798,23 @@
         // Process scanned code
         async function processCode(code) {
             let location = '';
+            const eventId = document.getElementById('scan-event-select')?.value || '';
             
             // Check if equipment is being checked out
             const item = equipment.find(eq => eq.id === code);
-            if (item && item.status === 'IN') {
+            if (item && item.status === 'IN' && !eventId) {
                 location = prompt('Where is this equipment going?', 'Event Location');
                 if (location === null) return; // Cancelled
+            } else if (item && item.status === 'IN' && eventId) {
+                const event = events.find(e => e.id === eventId);
+                location = event ? event.location : 'Event';
             }
 
             try {
                 const response = await fetch('/api/scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: code, location: location })
+                    body: JSON.stringify({ code: code, location: location, event_id: eventId })
                 });
 
                 const data = await response.json();
@@ -394,6 +822,9 @@
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     loadEquipment();
+                    if (eventId) {
+                        loadEvents(); // Refresh event checklist status
+                    }
                 } else {
                     showMessage('Error: ' + data.error, 'error');
                 }
@@ -579,8 +1010,374 @@
                 });
                 
                 document.getElementById('print-btn').classList.remove('hidden');
-                showMessage('Codes generated! Both QR codes and barcodes are ready. Print and test which works better with your scanner.', 'success');
+                showMessage('Codes generated! Print and test which works better with your scanner.', 'success');
             }, 100);
+        }
+
+        // ==================== EVENTS FUNCTIONS ====================
+        
+        async function loadEvents() {
+            try {
+                const response = await fetch('/api/events');
+                events = await response.json();
+                displayEvents();
+            } catch (error) {
+                showMessage('Error loading events: ' + error.message, 'error');
+            }
+        }
+
+        async function loadEventsForScan() {
+            try {
+                const response = await fetch('/api/events');
+                events = await response.json();
+                
+                const select = document.getElementById('scan-event-select');
+                select.innerHTML = '<option value="">No Event (Manual Check In/Out)</option>';
+                
+                // Only show PLANNING and ACTIVE events
+                events.filter(e => e.status === 'PLANNING' || e.status === 'ACTIVE')
+                    .forEach(event => {
+                        const option = document.createElement('option');
+                        option.value = event.id;
+                        option.textContent = `${event.name} (${event.date})`;
+                        select.appendChild(option);
+                    });
+            } catch (error) {
+                console.error('Error loading events for scan:', error);
+            }
+        }
+
+        function displayEvents() {
+            const container = document.getElementById('events-list');
+            container.innerHTML = '';
+            
+            let filteredEvents = [...events];
+            const statusFilter = document.getElementById('event-filter-status').value;
+            
+            if (statusFilter !== 'ALL') {
+                filteredEvents = filteredEvents.filter(e => e.status === statusFilter);
+            }
+            
+            if (filteredEvents.length === 0) {
+                container.innerHTML = '<p>No events found. Create your first event!</p>';
+                return;
+            }
+            
+            filteredEvents.forEach(event => {
+                const card = document.createElement('div');
+                card.className = 'event-card event-' + event.status.toLowerCase();
+                card.onclick = () => viewEventDetails(event.id);
+                
+                const badgeClass = 'badge-' + event.status.toLowerCase();
+                
+                card.innerHTML = `
+                    <div class="event-header">
+                        <div>
+                            <div class="event-title">${event.name}</div>
+                            <div class="event-meta">
+                                📅 ${event.date} | 📍 ${event.location || 'No location'} | 
+                                <span class="badge ${badgeClass}">${event.status}</span>
+                            </div>
+                            <div class="event-meta" style="margin-top: 5px;">
+                                <strong>Type:</strong> ${event.type}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function filterEvents() {
+            displayEvents();
+        }
+
+        function showCreateEventModal() {
+            currentEventId = null;
+            document.getElementById('event-modal-title').textContent = 'Create New Event';
+            document.getElementById('event-form').reset();
+            document.getElementById('event-modal').style.display = 'block';
+        }
+
+        function closeEventModal() {
+            document.getElementById('event-modal').style.display = 'none';
+        }
+
+        async function saveEvent() {
+            const name = document.getElementById('event-name').value.trim();
+            const type = document.getElementById('event-type').value;
+            const date = document.getElementById('event-date').value;
+            const location = document.getElementById('event-location').value.trim();
+            const notes = document.getElementById('event-notes').value.trim();
+            
+            if (!name || !type || !date) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, type, date, location, notes })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Event created successfully', 'success');
+                    closeEventModal();
+                    loadEvents();
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error creating event: ' + error.message, 'error');
+            }
+        }
+
+        async function viewEventDetails(eventId) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showMessage('Error loading event details', 'error');
+                    return;
+                }
+                
+                currentEvent = data.event;
+                const checklist = data.checklist;
+                
+                // Calculate progress
+                const total = checklist.length;
+                const checkedOut = checklist.filter(item => item.checked_out).length;
+                const checkedIn = checklist.filter(item => item.checked_in).length;
+                const progress = total > 0 ? Math.round((checkedOut / total) * 100) : 0;
+                
+                const badgeClass = 'badge-' + currentEvent.status.toLowerCase();
+                
+                let content = `
+                    <h2>${currentEvent.name}</h2>
+                    <div style="margin-bottom: 20px;">
+                        <span class="badge ${badgeClass}">${currentEvent.status}</span>
+                        <p><strong>Type:</strong> ${currentEvent.type}</p>
+                        <p><strong>Date:</strong> ${currentEvent.date}</p>
+                        <p><strong>Location:</strong> ${currentEvent.location || 'Not specified'}</p>
+                        <p><strong>Notes:</strong> ${currentEvent.notes || 'None'}</p>
+                    </div>
+                    
+                    <h3>Equipment Checklist (${total} items)</h3>
+                    
+                    <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 12px; margin: 15px 0; border-radius: 4px;">
+                        <strong>📱 Scan to Update:</strong> Go to the Scanner tab, select this event, and scan equipment barcodes to update this checklist automatically.
+                    </div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%">${progress}%</div>
+                    </div>
+                    <p style="color: #666; margin: 10px 0;">${checkedOut} checked out | ${checkedIn} returned</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <button onclick="showAddEquipmentToEvent('${eventId}')" class="success">+ Add Equipment</button>
+                        <button onclick="updateEventStatus('${eventId}', 'ACTIVE')" class="secondary" ${currentEvent.status === 'ACTIVE' ? 'disabled' : ''}>Mark as Active</button>
+                        <button onclick="updateEventStatus('${eventId}', 'COMPLETED')" class="secondary" ${currentEvent.status === 'COMPLETED' ? 'disabled' : ''}>Mark as Completed</button>
+                        <button onclick="deleteEvent('${eventId}')" class="danger">Delete Event</button>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+                `;
+                
+                if (checklist.length === 0) {
+                    content += '<p>No equipment added yet. Click "Add Equipment" to start building your checklist.</p>';
+                } else {
+                    checklist.forEach(item => {
+                        // Determine the status and styling
+                        let itemClass = 'not-started';
+                        let statusBadgeClass = 'not-started';
+                        let statusText = 'Pending';
+                        
+                        if (item.checked_out && item.checked_in) {
+                            itemClass = 'completed';
+                            statusBadgeClass = 'completed';
+                            statusText = 'Complete';
+                        } else if (item.checked_out) {
+                            itemClass = 'checked-out';
+                            statusBadgeClass = 'checked-out';
+                            statusText = 'Out';
+                        }
+                        
+                        content += `
+                            <div class="checklist-item ${itemClass}">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <strong style="font-size: 16px;">${item.name}</strong>
+                                        <span class="status-badge ${statusBadgeClass}">${statusText}</span>
+                                    </div>
+                                    <div style="margin-top: 5px; color: #666; font-size: 13px;">
+                                        ${item.equipment_id}
+                                    </div>
+                                    ${item.notes ? `<div style="margin-top: 8px; padding: 8px; background: #fff9e6; border-left: 3px solid #ffc107; font-size: 13px;">${item.notes}</div>` : ''}
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button onclick="removeFromChecklist('${eventId}', ${item.id})" class="danger" style="padding: 10px 20px;">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                content += '</div>';
+                
+                document.getElementById('event-details-content').innerHTML = content;
+                document.getElementById('event-details-modal').style.display = 'block';
+            } catch (error) {
+                showMessage('Error loading event details: ' + error.message, 'error');
+            }
+        }
+
+        function closeEventDetailsModal() {
+            document.getElementById('event-details-modal').style.display = 'none';
+        }
+
+        async function updateEventStatus(eventId, status) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                
+                if (response.ok) {
+                    showMessage('Event status updated', 'success');
+                    closeEventDetailsModal();
+                    loadEvents();
+                } else {
+                    showMessage('Error updating event status', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteEvent(eventId) {
+            if (!confirm('Delete this event and its checklist?')) return;
+            
+            try {
+                const response = await fetch(`/api/events/${eventId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Event deleted', 'success');
+                    closeEventDetailsModal();
+                    loadEvents();
+                } else {
+                    showMessage('Error deleting event', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        function showAddEquipmentToEvent(eventId) {
+            currentEventId = eventId;
+            selectedEquipment.clear();
+            displayEquipmentForSelection();
+            document.getElementById('add-equipment-modal').style.display = 'block';
+        }
+
+        function closeAddEquipmentModal() {
+            document.getElementById('add-equipment-modal').style.display = 'none';
+        }
+
+        function displayEquipmentForSelection() {
+            const container = document.getElementById('equipment-select-list');
+            container.innerHTML = '';
+            
+            const searchTerm = document.getElementById('equipment-search').value.toLowerCase();
+            
+            let filteredEquipment = equipment.filter(eq => 
+                eq.name.toLowerCase().includes(searchTerm) || 
+                eq.id.toLowerCase().includes(searchTerm)
+            );
+            
+            filteredEquipment.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'equipment-select-item';
+                if (selectedEquipment.has(item.id)) {
+                    div.classList.add('selected');
+                }
+                div.textContent = `${item.name} (${item.id}) - ${item.status}`;
+                div.onclick = () => toggleEquipmentSelection(item.id, div);
+                container.appendChild(div);
+            });
+        }
+
+        function searchEquipmentForEvent() {
+            displayEquipmentForSelection();
+        }
+
+        function toggleEquipmentSelection(equipmentId, element) {
+            if (selectedEquipment.has(equipmentId)) {
+                selectedEquipment.delete(equipmentId);
+                element.classList.remove('selected');
+            } else {
+                selectedEquipment.add(equipmentId);
+                element.classList.add('selected');
+            }
+        }
+
+        async function addSelectedEquipmentToEvent() {
+            if (selectedEquipment.size === 0) {
+                alert('Please select at least one equipment item');
+                return;
+            }
+            
+            for (const equipmentId of selectedEquipment) {
+                try {
+                    await fetch(`/api/events/${currentEventId}/checklist`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ equipment_id: equipmentId })
+                    });
+                } catch (error) {
+                    console.error('Error adding equipment:', error);
+                }
+            }
+            
+            showMessage(`Added ${selectedEquipment.size} items to checklist`, 'success');
+            closeAddEquipmentModal();
+            viewEventDetails(currentEventId);
+        }
+
+        async function removeFromChecklist(eventId, itemId) {
+            if (!confirm('Remove this equipment from the checklist?')) return;
+            
+            try {
+                const response = await fetch(`/api/events/${eventId}/checklist/${itemId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Equipment removed from checklist', 'success');
+                    viewEventDetails(eventId);
+                } else {
+                    showMessage('Error removing equipment', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
         }
     </script>
 </body>
