@@ -67,13 +67,26 @@ def init_db():
     ''')
     
     # Template equipment items
+    # First check if table exists and has old schema
+    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='template_items'")
+    table_exists = cursor.fetchone()
+    
+    if table_exists:
+        # Check if old schema (has equipment_name column)
+        cursor = conn.execute("PRAGMA table_info(template_items)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'equipment_name' in columns and 'equipment_id' not in columns:
+            # Drop old table and recreate with new schema
+            conn.execute('DROP TABLE template_items')
+    
     conn.execute('''
         CREATE TABLE IF NOT EXISTS template_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             template_id TEXT NOT NULL,
-            equipment_name TEXT NOT NULL,
-            quantity INTEGER DEFAULT 1,
-            FOREIGN KEY (template_id) REFERENCES event_templates(id)
+            equipment_id TEXT NOT NULL,
+            FOREIGN KEY (template_id) REFERENCES event_templates(id),
+            FOREIGN KEY (equipment_id) REFERENCES equipment(id)
         )
     ''')
     
@@ -395,10 +408,14 @@ def get_template(template_id):
         conn.close()
         return jsonify({'error': 'Template not found'}), 404
     
-    items = conn.execute(
-        'SELECT * FROM template_items WHERE template_id = ?',
-        (template_id,)
-    ).fetchall()
+    # Get template items with equipment details
+    items = conn.execute('''
+        SELECT ti.id, ti.template_id, ti.equipment_id, e.name as equipment_name
+        FROM template_items ti
+        LEFT JOIN equipment e ON ti.equipment_id = e.id
+        WHERE ti.template_id = ?
+        ORDER BY e.name
+    ''', (template_id,)).fetchall()
     
     conn.close()
     
@@ -431,6 +448,91 @@ def create_template():
         'id': template_id,
         'name': name,
         'message': 'Template created successfully'
+    })
+
+@app.route('/api/templates/<template_id>/items', methods=['POST'])
+def add_template_item(template_id):
+    """Add equipment to template"""
+    data = request.json
+    equipment_id = data.get('equipment_id')
+    
+    if not equipment_id:
+        return jsonify({'error': 'Equipment ID is required'}), 400
+    
+    conn = get_db()
+    
+    # Check if already exists
+    existing = conn.execute(
+        'SELECT id FROM template_items WHERE template_id = ? AND equipment_id = ?',
+        (template_id, equipment_id)
+    ).fetchone()
+    
+    if existing:
+        conn.close()
+        return jsonify({'error': 'Equipment already in template'}), 400
+    
+    conn.execute(
+        'INSERT INTO template_items (template_id, equipment_id) VALUES (?, ?)',
+        (template_id, equipment_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Equipment added to template'})
+
+@app.route('/api/templates/<template_id>/items/<int:item_id>', methods=['DELETE'])
+def remove_template_item(template_id, item_id):
+    """Remove equipment from template"""
+    conn = get_db()
+    conn.execute('DELETE FROM template_items WHERE id = ? AND template_id = ?', (item_id, template_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Equipment removed from template'})
+
+@app.route('/api/templates/<template_id>', methods=['DELETE'])
+def delete_template(template_id):
+    """Delete template and its items"""
+    conn = get_db()
+    conn.execute('DELETE FROM template_items WHERE template_id = ?', (template_id,))
+    conn.execute('DELETE FROM event_templates WHERE id = ?', (template_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Template deleted successfully'})
+
+@app.route('/api/events/<event_id>/apply-template/<template_id>', methods=['POST'])
+def apply_template_to_event(event_id, template_id):
+    """Apply template to event - adds all template equipment to event checklist"""
+    conn = get_db()
+    
+    # Get all items from template
+    template_items = conn.execute(
+        'SELECT equipment_id FROM template_items WHERE template_id = ?',
+        (template_id,)
+    ).fetchall()
+    
+    added = 0
+    for item in template_items:
+        equipment_id = item['equipment_id']
+        
+        # Check if already in event checklist
+        existing = conn.execute(
+            'SELECT id FROM event_equipment WHERE event_id = ? AND equipment_id = ?',
+            (event_id, equipment_id)
+        ).fetchone()
+        
+        if not existing:
+            conn.execute(
+                'INSERT INTO event_equipment (event_id, equipment_id) VALUES (?, ?)',
+                (event_id, equipment_id)
+            )
+            added += 1
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'message': f'Template applied: {added} items added to checklist',
+        'added': added
     })
 
 # ==================== EXPORT/IMPORT ROUTES ====================

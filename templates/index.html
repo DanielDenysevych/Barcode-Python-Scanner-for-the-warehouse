@@ -440,9 +440,10 @@
 
     <!-- NAVIGATION TABS -->
     <div class="nav-tabs">
-        <div class="nav-tab active" onclick="showTab('equipment')">Equipment</div>
-        <div class="nav-tab" onclick="showTab('events')">Events</div>
-        <div class="nav-tab" onclick="showTab('scan')">Scanner</div>
+        <div class="nav-tab active" onclick="showTab('equipment', this)">Equipment</div>
+        <div class="nav-tab" onclick="showTab('events', this)">Events</div>
+        <div class="nav-tab" onclick="showTab('templates', this)">Templates</div>
+        <div class="nav-tab" onclick="showTab('scan', this)">Scanner</div>
     </div>
 
     <!-- EQUIPMENT TAB -->
@@ -543,6 +544,21 @@
         </div>
     </div>
 
+    <!-- TEMPLATES TAB -->
+    <div id="templates-tab" class="tab-content">
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>Equipment Templates</h2>
+                    <p style="color: #666; margin-top: 5px;">Create reusable equipment lists for different event types</p>
+                </div>
+                <button class="success" onclick="showCreateTemplateModal()">+ Create Template</button>
+            </div>
+            
+            <div id="templates-list" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
     <!-- SCAN TAB -->
     <div id="scan-tab" class="tab-content">
         <!-- SCAN SECTION -->
@@ -600,6 +616,19 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Equipment Template (Optional)</label>
+                    <select id="event-template" style="margin-bottom: 5px;">
+                        <option value="">None - I'll add equipment manually</option>
+                    </select>
+                    <small style="color: #666; display: block;">
+                        Select a template to automatically add equipment to your checklist
+                    </small>
+                    <small id="no-templates-hint" style="color: #2196F3; display: none; margin-top: 5px; cursor: pointer;" onclick="goToTemplatesTab()">
+                        → No templates yet? Click here to create one
+                    </small>
+                </div>
+                
+                <div class="form-group">
                     <label>Event Date*</label>
                     <input type="date" id="event-date" required>
                 </div>
@@ -645,11 +674,44 @@
         </div>
     </div>
 
+    <!-- CREATE TEMPLATE MODAL -->
+    <div id="template-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTemplateModal()">&times;</span>
+            <h2>Create Equipment Template</h2>
+            
+            <form id="template-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Template Name*</label>
+                    <input type="text" id="template-name" required placeholder="e.g., Wedding Package, Conference Setup">
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="template-description" rows="2" placeholder="Brief description of this template"></textarea>
+                </div>
+                
+                <button type="button" onclick="saveTemplate()" class="success">Create Template</button>
+                <button type="button" onclick="closeTemplateModal()" class="secondary">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TEMPLATE DETAILS MODAL -->
+    <div id="template-details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTemplateDetailsModal()">&times;</span>
+            <div id="template-details-content"></div>
+        </div>
+    </div>
+
     <script>
         let equipment = [];
         let events = [];
+        let templates = [];
         let currentEvent = null;
         let currentEventId = null;
+        let currentTemplateId = null;
         let selectedEquipment = new Set();
         let html5QrCode = null;
 
@@ -657,30 +719,10 @@
         window.onload = function() {
             loadEquipment();
             loadEvents();
+            loadTemplates();
         };
 
         // Tab management
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + '-tab').classList.add('active');
-            event.target.classList.add('active');
-            
-            // Load data if needed
-            if (tabName === 'events') {
-                loadEvents();
-            } else if (tabName === 'scan') {
-                loadEventsForScan();
-            }
-        }
-
         // ==================== EQUIPMENT FUNCTIONS ====================
         
         async function loadEquipment() {
@@ -1097,44 +1139,12 @@
             currentEventId = null;
             document.getElementById('event-modal-title').textContent = 'Create New Event';
             document.getElementById('event-form').reset();
+            updateTemplateSelects(); // Make sure templates dropdown is populated
             document.getElementById('event-modal').style.display = 'block';
         }
 
         function closeEventModal() {
             document.getElementById('event-modal').style.display = 'none';
-        }
-
-        async function saveEvent() {
-            const name = document.getElementById('event-name').value.trim();
-            const type = document.getElementById('event-type').value;
-            const date = document.getElementById('event-date').value;
-            const location = document.getElementById('event-location').value.trim();
-            const notes = document.getElementById('event-notes').value.trim();
-            
-            if (!name || !type || !date) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/events', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, type, date, location, notes })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    showMessage('Event created successfully', 'success');
-                    closeEventModal();
-                    loadEvents();
-                } else {
-                    showMessage('Error: ' + data.error, 'error');
-                }
-            } catch (error) {
-                showMessage('Error creating event: ' + error.message, 'error');
-            }
         }
 
         async function viewEventDetails(eventId) {
@@ -1370,6 +1380,368 @@
                 }
             } catch (error) {
                 showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== TEMPLATES FUNCTIONS ====================
+        
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates');
+                templates = await response.json();
+                displayTemplates();
+                updateTemplateSelects();
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function displayTemplates() {
+            const container = document.getElementById('templates-list');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (templates.length === 0) {
+                container.innerHTML = '<p>No templates created yet. Create your first template to save time on future events!</p>';
+                return;
+            }
+            
+            templates.forEach(template => {
+                const card = document.createElement('div');
+                card.className = 'event-card';
+                card.onclick = () => viewTemplateDetails(template.id);
+                
+                card.innerHTML = `
+                    <div class="event-header">
+                        <div>
+                            <div class="event-title">${template.name}</div>
+                            <div class="event-meta">
+                                ${template.description || 'No description'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function showCreateTemplateModal() {
+            document.getElementById('template-form').reset();
+            document.getElementById('template-modal').style.display = 'block';
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('template-modal').style.display = 'none';
+        }
+
+        function closeTemplateDetailsModal() {
+            document.getElementById('template-details-modal').style.display = 'none';
+        }
+
+        async function saveTemplate() {
+            const name = document.getElementById('template-name').value.trim();
+            const description = document.getElementById('template-description').value.trim();
+            
+            if (!name) {
+                alert('Please enter template name');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Template created successfully', 'success');
+                    closeTemplateModal();
+                    loadTemplates();
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error creating template: ' + error.message, 'error');
+            }
+        }
+
+        async function viewTemplateDetails(templateId) {
+            try {
+                const response = await fetch(`/api/templates/${templateId}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showMessage('Error loading template details', 'error');
+                    return;
+                }
+                
+                currentTemplateId = templateId;
+                const template = data.template;
+                const items = data.items;
+                
+                let content = `
+                    <h2>${template.name}</h2>
+                    <p style="color: #666; margin-bottom: 20px;">${template.description || 'No description'}</p>
+                    
+                    <h3>Equipment List (${items.length} items)</h3>
+                    
+                    <div style="margin: 15px 0;">
+                        <button onclick="showAddEquipmentToTemplate('${templateId}')" class="success">+ Add Equipment</button>
+                        <button onclick="deleteTemplate('${templateId}')" class="danger">Delete Template</button>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+                `;
+                
+                if (items.length === 0) {
+                    content += '<p>No equipment added yet. Click "Add Equipment" to start building this template.</p>';
+                } else {
+                    // Get equipment details for template items
+                    items.forEach(item => {
+                        const eq = equipment.find(e => e.id === item.equipment_id);
+                        if (eq) {
+                            content += `
+                                <div class="checklist-item not-started">
+                                    <div style="flex: 1;">
+                                        <strong style="font-size: 16px;">${eq.name}</strong>
+                                        <div style="margin-top: 5px; color: #666; font-size: 13px;">
+                                            ${eq.id}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button onclick="removeFromTemplate('${templateId}', ${item.id})" class="danger" style="padding: 10px 20px;">
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                
+                content += '</div>';
+                
+                document.getElementById('template-details-content').innerHTML = content;
+                document.getElementById('template-details-modal').style.display = 'block';
+            } catch (error) {
+                showMessage('Error loading template details: ' + error.message, 'error');
+            }
+        }
+
+        function showAddEquipmentToTemplate(templateId) {
+            currentTemplateId = templateId;
+            selectedEquipment.clear();
+            displayEquipmentForSelection();
+            document.getElementById('add-equipment-modal').style.display = 'block';
+        }
+
+        async function addSelectedEquipmentToTemplate() {
+            if (selectedEquipment.size === 0) {
+                alert('Please select at least one equipment item');
+                return;
+            }
+            
+            for (const equipmentId of selectedEquipment) {
+                try {
+                    await fetch(`/api/templates/${currentTemplateId}/items`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ equipment_id: equipmentId })
+                    });
+                } catch (error) {
+                    console.error('Error adding equipment:', error);
+                }
+            }
+            
+            showMessage(`Added ${selectedEquipment.size} items to template`, 'success');
+            closeAddEquipmentModal();
+            viewTemplateDetails(currentTemplateId);
+        }
+
+        async function removeFromTemplate(templateId, itemId) {
+            if (!confirm('Remove this equipment from the template?')) return;
+            
+            try {
+                const response = await fetch(`/api/templates/${templateId}/items/${itemId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Equipment removed from template', 'success');
+                    viewTemplateDetails(templateId);
+                    loadTemplates();
+                } else {
+                    showMessage('Error removing equipment', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteTemplate(templateId) {
+            if (!confirm('Delete this template? This cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/api/templates/${templateId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Template deleted', 'success');
+                    closeTemplateDetailsModal();
+                    loadTemplates();
+                } else {
+                    showMessage('Error deleting template', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        function updateTemplateSelects() {
+            const select = document.getElementById('event-template');
+            const hint = document.getElementById('no-templates-hint');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">None - I\'ll add equipment manually</option>';
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                select.appendChild(option);
+            });
+            
+            // Show hint if no templates exist
+            if (hint) {
+                hint.style.display = templates.length === 0 ? 'block' : 'none';
+            }
+        }
+
+        function goToTemplatesTab() {
+            closeEventModal();
+            showTab('templates');
+        }
+
+        // Update saveEvent to apply template if selected
+        async function saveEvent() {
+            const name = document.getElementById('event-name').value.trim();
+            const type = document.getElementById('event-type').value;
+            const date = document.getElementById('event-date').value;
+            const location = document.getElementById('event-location').value.trim();
+            const notes = document.getElementById('event-notes').value.trim();
+            const templateId = document.getElementById('event-template')?.value;
+            
+            if (!name || !type || !date) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, type, date, location, notes })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // If template selected, apply it
+                    if (templateId) {
+                        const templateResponse = await fetch(`/api/events/${data.id}/apply-template/${templateId}`, {
+                            method: 'POST'
+                        });
+                        const templateData = await templateResponse.json();
+                        showMessage(`Event created! ${templateData.added} items added from template`, 'success');
+                    } else {
+                        showMessage('Event created successfully', 'success');
+                    }
+                    
+                    closeEventModal();
+                    loadEvents();
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error creating event: ' + error.message, 'error');
+            }
+        }
+
+        // Update showAddEquipmentToEvent to differentiate from template
+        function showAddEquipmentToEvent(eventId) {
+            currentEventId = eventId;
+            currentTemplateId = null;
+            selectedEquipment.clear();
+            displayEquipmentForSelection();
+            document.getElementById('add-equipment-modal').style.display = 'block';
+        }
+
+        // Update addSelectedEquipmentToEvent to handle both events and templates
+        async function addSelectedEquipmentToEvent() {
+            if (selectedEquipment.size === 0) {
+                alert('Please select at least one equipment item');
+                return;
+            }
+            
+            // Check if we're adding to template or event
+            if (currentTemplateId) {
+                return addSelectedEquipmentToTemplate();
+            }
+            
+            for (const equipmentId of selectedEquipment) {
+                try {
+                    await fetch(`/api/events/${currentEventId}/checklist`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ equipment_id: equipmentId })
+                    });
+                } catch (error) {
+                    console.error('Error adding equipment:', error);
+                }
+            }
+            
+            showMessage(`Added ${selectedEquipment.size} items to checklist`, 'success');
+            closeAddEquipmentModal();
+            viewEventDetails(currentEventId);
+        }
+
+        // Update showTab to load templates when tab is shown
+        function showTab(tabName, clickedElement) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Activate the clicked nav tab if provided
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            } else {
+                // Find and activate the corresponding nav tab
+                const navTabs = document.querySelectorAll('.nav-tab');
+                const tabIndex = ['equipment', 'events', 'templates', 'scan'].indexOf(tabName);
+                if (tabIndex >= 0 && navTabs[tabIndex]) {
+                    navTabs[tabIndex].classList.add('active');
+                }
+            }
+            
+            // Load data if needed
+            if (tabName === 'events') {
+                loadEvents();
+            } else if (tabName === 'templates') {
+                loadTemplates();
+            } else if (tabName === 'scan') {
+                loadEventsForScan();
             }
         }
 
