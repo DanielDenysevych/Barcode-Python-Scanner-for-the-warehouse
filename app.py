@@ -90,6 +90,23 @@ def init_db():
         )
     ''')
     
+    # Equipment history table - tracks all check-ins and check-outs
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS equipment_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            equipment_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            event_id TEXT,
+            event_name TEXT,
+            location TEXT,
+            scanned_by TEXT,
+            timestamp TEXT NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (equipment_id) REFERENCES equipment(id),
+            FOREIGN KEY (event_id) REFERENCES events(id)
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -145,6 +162,7 @@ def scan_equipment():
     code = data.get('code')
     location = data.get('location', '')
     event_id = data.get('event_id', '')
+    scanned_by = data.get('scanned_by', 'Unknown User')
     
     if not code:
         return jsonify({'error': 'Code is required'}), 400
@@ -156,10 +174,20 @@ def scan_equipment():
         conn.close()
         return jsonify({'error': 'Equipment not found'}), 404
     
+    # Get event name if event_id provided
+    event_name = None
+    if event_id:
+        event = conn.execute('SELECT name FROM events WHERE id = ?', (event_id,)).fetchone()
+        if event:
+            event_name = event['name']
+    
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     # Toggle status
     if equipment['status'] == 'IN':
         new_status = 'OUT'
         new_location = location if location else 'Unknown'
+        action = 'CHECK_OUT'
         message = f"{equipment['name']} checked OUT to: {new_location}"
         
         # If event_id provided, mark as checked out in event checklist
@@ -171,6 +199,7 @@ def scan_equipment():
     else:
         new_status = 'IN'
         new_location = 'Warehouse'
+        action = 'CHECK_IN'
         message = f"{equipment['name']} checked IN to warehouse"
         
         # If event_id provided, mark as checked in
@@ -180,10 +209,18 @@ def scan_equipment():
                 (event_id, code)
             )
     
+    # Update equipment status
     conn.execute(
         'UPDATE equipment SET status = ?, location = ?, last_updated = ? WHERE id = ?',
-        (new_status, new_location, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), code)
+        (new_status, new_location, timestamp, code)
     )
+    
+    # Log to history
+    conn.execute('''
+        INSERT INTO equipment_history (equipment_id, action, event_id, event_name, location, scanned_by, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (code, action, event_id, event_name, new_location, scanned_by, timestamp))
+    
     conn.commit()
     conn.close()
     
@@ -196,6 +233,47 @@ def scan_equipment():
             'location': new_location
         }
     })
+
+@app.route('/api/equipment/<equipment_id>/history', methods=['GET'])
+def get_equipment_history(equipment_id):
+    """Get history for specific equipment"""
+    conn = get_db()
+    history = conn.execute('''
+        SELECT * FROM equipment_history 
+        WHERE equipment_id = ? 
+        ORDER BY timestamp DESC
+    ''', (equipment_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in history])
+
+@app.route('/api/history', methods=['GET'])
+def get_all_history():
+    """Get all equipment history with optional filters"""
+    limit = request.args.get('limit', 50, type=int)
+    event_id = request.args.get('event_id', None)
+    
+    conn = get_db()
+    
+    if event_id:
+        history = conn.execute('''
+            SELECT h.*, e.name as equipment_name
+            FROM equipment_history h
+            LEFT JOIN equipment e ON h.equipment_id = e.id
+            WHERE h.event_id = ?
+            ORDER BY h.timestamp DESC
+            LIMIT ?
+        ''', (event_id, limit)).fetchall()
+    else:
+        history = conn.execute('''
+            SELECT h.*, e.name as equipment_name
+            FROM equipment_history h
+            LEFT JOIN equipment e ON h.equipment_id = e.id
+            ORDER BY h.timestamp DESC
+            LIMIT ?
+        ''', (limit,)).fetchall()
+    
+    conn.close()
+    return jsonify([dict(row) for row in history])
 
 # ==================== EVENTS ROUTES ====================
 
