@@ -1,13 +1,25 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime
 import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)
 
 DATABASE = 'equipment.db'
+UPLOAD_FOLDER = 'uploads/photos'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# Create upload folder if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -18,16 +30,30 @@ def init_db():
     """Initialize the database with equipment and events tables"""
     conn = get_db()
     
-    # Equipment table
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS equipment (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            status TEXT NOT NULL,
-            location TEXT,
-            last_updated TEXT
-        )
-    ''')
+    # Check if photo column exists in equipment table
+    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'")
+    table_exists = cursor.fetchone()
+    
+    if table_exists:
+        # Check columns
+        cursor = conn.execute("PRAGMA table_info(equipment)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'photo' not in columns:
+            # Add photo column to existing table
+            conn.execute('ALTER TABLE equipment ADD COLUMN photo TEXT')
+    else:
+        # Create equipment table with photo field
+        conn.execute('''
+            CREATE TABLE equipment (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                status TEXT NOT NULL,
+                location TEXT,
+                last_updated TEXT,
+                photo TEXT
+            )
+        ''')
     
     # Events table
     conn.execute('''
@@ -67,7 +93,6 @@ def init_db():
     ''')
     
     # Template equipment items
-    # First check if table exists and has old schema
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='template_items'")
     table_exists = cursor.fetchone()
     
@@ -114,6 +139,11 @@ def init_db():
 def index():
     return render_template('index.html')
 
+@app.route('/uploads/photos/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded photos"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 # ==================== EQUIPMENT ROUTES ====================
 
 @app.route('/api/equipment', methods=['GET'])
@@ -126,9 +156,13 @@ def get_equipment():
 
 @app.route('/api/equipment', methods=['POST'])
 def add_equipment():
-    """Add new equipment"""
-    data = request.json
-    name = data.get('name')
+    """Add new equipment with optional photo"""
+    # Handle both form data (with photo) and JSON (without photo)
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        name = request.form.get('name')
+    else:
+        data = request.json
+        name = data.get('name') if data else None
     
     if not name:
         return jsonify({'error': 'Name is required'}), 400
@@ -136,20 +170,117 @@ def add_equipment():
     # Generate unique ID
     equipment_id = 'EQ' + str(int(datetime.now().timestamp() * 1000))
     
+    # Handle photo upload
+    photo_path = None
+    if 'photo' in request.files:
+        file = request.files['photo']
+        if file and file.filename and allowed_file(file.filename):
+            # Create filename with equipment ID
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{equipment_id}.{ext}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            photo_path = filename
+    
     conn = get_db()
     conn.execute(
-        'INSERT INTO equipment (id, name, status, location, last_updated) VALUES (?, ?, ?, ?, ?)',
-        (equipment_id, name, 'IN', 'Warehouse', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        'INSERT INTO equipment (id, name, status, location, last_updated, photo) VALUES (?, ?, ?, ?, ?, ?)',
+        (equipment_id, name, 'IN', 'Warehouse', datetime.now().strftime('%Y-%m-%d %H:%M:%S'), photo_path)
     )
     conn.commit()
     conn.close()
     
-    return jsonify({'id': equipment_id, 'name': name, 'message': 'Equipment added successfully'})
+    return jsonify({
+        'id': equipment_id, 
+        'name': name, 
+        'photo': photo_path,
+        'message': 'Equipment added successfully'
+    })
+
+@app.route('/api/equipment/<equipment_id>/photo', methods=['POST'])
+def update_equipment_photo(equipment_id):
+    """Update photo for existing equipment"""
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No photo provided'}), 400
+    
+    file = request.files['photo']
+    if not file or not file.filename:
+        return jsonify({'error': 'No photo selected'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Invalid file type. Allowed: png, jpg, jpeg, gif, webp'}), 400
+    
+    conn = get_db()
+    equipment = conn.execute('SELECT * FROM equipment WHERE id = ?', (equipment_id,)).fetchone()
+    
+    if not equipment:
+        conn.close()
+        return jsonify({'error': 'Equipment not found'}), 404
+    
+    # Delete old photo if exists
+    if equipment['photo']:
+        old_photo_path = os.path.join(app.config['UPLOAD_FOLDER'], equipment['photo'])
+        if os.path.exists(old_photo_path):
+            os.remove(old_photo_path)
+    
+    # Save new photo
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{equipment_id}.{ext}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+    
+    # Update database
+    conn.execute(
+        'UPDATE equipment SET photo = ? WHERE id = ?',
+        (filename, equipment_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'message': 'Photo updated successfully',
+        'photo': filename
+    })
+
+@app.route('/api/equipment/<equipment_id>/photo', methods=['DELETE'])
+def delete_equipment_photo(equipment_id):
+    """Delete photo for equipment"""
+    conn = get_db()
+    equipment = conn.execute('SELECT * FROM equipment WHERE id = ?', (equipment_id,)).fetchone()
+    
+    if not equipment:
+        conn.close()
+        return jsonify({'error': 'Equipment not found'}), 404
+    
+    # Delete photo file if exists
+    if equipment['photo']:
+        photo_path = os.path.join(app.config['UPLOAD_FOLDER'], equipment['photo'])
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+    
+    # Update database
+    conn.execute(
+        'UPDATE equipment SET photo = NULL WHERE id = ?',
+        (equipment_id,)
+    )
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'message': 'Photo deleted successfully'})
 
 @app.route('/api/equipment/<equipment_id>', methods=['DELETE'])
 def delete_equipment(equipment_id):
-    """Delete equipment"""
+    """Delete equipment and its photo"""
     conn = get_db()
+    equipment = conn.execute('SELECT * FROM equipment WHERE id = ?', (equipment_id,)).fetchone()
+    
+    if equipment:
+        # Delete photo file if exists
+        if equipment['photo']:
+            photo_path = os.path.join(app.config['UPLOAD_FOLDER'], equipment['photo'])
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+    
     conn.execute('DELETE FROM equipment WHERE id = ?', (equipment_id,))
     conn.commit()
     conn.close()
@@ -230,7 +361,8 @@ def scan_equipment():
             'id': equipment['id'],
             'name': equipment['name'],
             'status': new_status,
-            'location': new_location
+            'location': new_location,
+            'photo': equipment['photo']
         }
     })
 
@@ -295,9 +427,9 @@ def get_event(event_id):
         conn.close()
         return jsonify({'error': 'Event not found'}), 404
     
-    # Get checklist items with equipment details
+    # Get checklist items with equipment details including photos
     checklist = conn.execute('''
-        SELECT ee.*, e.name, e.status as equipment_status
+        SELECT ee.*, e.name, e.status as equipment_status, e.photo
         FROM event_equipment ee
         JOIN equipment e ON ee.equipment_id = e.id
         WHERE ee.event_id = ?
@@ -636,17 +768,21 @@ def import_data():
     for item in equipment_list:
         # Check if equipment already exists
         existing = conn.execute('SELECT id FROM equipment WHERE id = ?', (item['id'],)).fetchone()
+        
+        # Get photo value, default to None if not present
+        photo = item.get('photo', None)
+        
         if existing:
             # Update existing
             conn.execute(
-                'UPDATE equipment SET name = ?, status = ?, location = ?, last_updated = ? WHERE id = ?',
-                (item['name'], item['status'], item['location'], item['last_updated'], item['id'])
+                'UPDATE equipment SET name = ?, status = ?, location = ?, last_updated = ?, photo = ? WHERE id = ?',
+                (item['name'], item['status'], item['location'], item['last_updated'], photo, item['id'])
             )
         else:
             # Insert new
             conn.execute(
-                'INSERT INTO equipment (id, name, status, location, last_updated) VALUES (?, ?, ?, ?, ?)',
-                (item['id'], item['name'], item['status'], item['location'], item['last_updated'])
+                'INSERT INTO equipment (id, name, status, location, last_updated, photo) VALUES (?, ?, ?, ?, ?, ?)',
+                (item['id'], item['name'], item['status'], item['location'], item['last_updated'], photo)
             )
     
     conn.commit()

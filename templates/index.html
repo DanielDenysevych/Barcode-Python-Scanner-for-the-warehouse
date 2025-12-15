@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,14 +14,14 @@
             padding: 20px;
             background: #f5f5f5;
         }
-        
+
         .nav-tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
         }
-        
+
         .nav-tab {
             padding: 15px 30px;
             background: white;
@@ -30,24 +31,24 @@
             font-size: 16px;
             font-weight: bold;
         }
-        
+
         .nav-tab:hover {
             background: #f0f0f0;
         }
-        
+
         .nav-tab.active {
             background: #333;
             color: white;
         }
-        
+
         .tab-content {
             display: none;
         }
-        
+
         .tab-content.active {
             display: block;
         }
-        
+
         .section {
             background: white;
             padding: 20px;
@@ -55,26 +56,29 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
-        
+
         h1 {
             margin-top: 0;
         }
-        
+
         h2 {
             border-bottom: 2px solid #333;
             padding-bottom: 5px;
         }
-        
+
         h3 {
             margin-top: 0;
         }
-        
-        input, select, button, textarea {
+
+        input,
+        select,
+        button,
+        textarea {
             padding: 10px;
             font-size: 16px;
             margin: 5px 0;
         }
-        
+
         button {
             background: #333;
             color: white;
@@ -84,91 +88,92 @@
             border-radius: 3px;
             transition: all 0.2s ease;
         }
-        
+
         button:hover {
             background: #555;
             transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
-        
+
         button:active {
             transform: translateY(0);
         }
-        
+
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-        
+
         button.secondary {
             background: #6c757d;
         }
-        
+
         button.secondary:hover {
             background: #5a6268;
         }
-        
+
         button.danger {
             background: #dc3545;
         }
-        
+
         button.danger:hover {
             background: #c82333;
         }
-        
+
         button.success {
             background: #28a745;
         }
-        
+
         button.success:hover {
             background: #218838;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-        
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
         }
-        
+
         th {
             background: #333;
             color: white;
         }
-        
+
         .status-in {
             background: #d4edda;
         }
-        
+
         .status-out {
             background: #fff3cd;
         }
-        
+
         .event-planning {
             background: #cce5ff;
         }
-        
+
         .event-active {
             background: #fff3cd;
         }
-        
+
         .event-completed {
             background: #d4edda;
         }
-        
+
         #scanner-container {
             width: 100%;
             max-width: 500px;
             margin-top: 10px;
         }
-        
+
         .qr-code {
             margin: 10px;
             padding: 10px;
@@ -177,33 +182,33 @@
             display: inline-block;
             text-align: center;
         }
-        
+
         .hidden {
             display: none;
         }
-        
+
         .message {
             padding: 15px;
             margin: 10px 0;
             border-radius: 5px;
         }
-        
+
         .message-success {
             background: #d4edda;
             color: #155724;
         }
-        
+
         .message-error {
             background: #f8d7da;
             color: #721c24;
         }
-        
+
         .stats {
             display: flex;
             gap: 20px;
             margin-bottom: 20px;
         }
-        
+
         .stat-card {
             flex: 1;
             padding: 15px;
@@ -212,17 +217,17 @@
             text-align: center;
             border-radius: 5px;
         }
-        
+
         .stat-number {
             font-size: 32px;
             font-weight: bold;
             margin: 10px 0;
         }
-        
+
         .stat-label {
             color: #666;
         }
-        
+
         .event-card {
             background: white;
             border: 1px solid #ddd;
@@ -231,28 +236,28 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        
+
         .event-card:hover {
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        
+
         .event-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .event-title {
             font-size: 20px;
             font-weight: bold;
             margin-bottom: 5px;
         }
-        
+
         .event-meta {
             color: #666;
             font-size: 14px;
         }
-        
+
         .badge {
             display: inline-block;
             padding: 5px 10px;
@@ -260,22 +265,22 @@
             font-size: 12px;
             font-weight: bold;
         }
-        
+
         .badge-planning {
             background: #cce5ff;
             color: #004085;
         }
-        
+
         .badge-active {
             background: #fff3cd;
             color: #856404;
         }
-        
+
         .badge-completed {
             background: #d4edda;
             color: #155724;
         }
-        
+
         .checklist-item {
             padding: 15px;
             margin: 8px 0;
@@ -287,29 +292,29 @@
             transition: all 0.3s ease;
             background: white;
         }
-        
+
         .checklist-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         /* Not started - grey border */
         .checklist-item.not-started {
             border-left: 5px solid #6c757d;
             background: #f8f9fa;
         }
-        
+
         /* Checked out - orange/yellow */
         .checklist-item.checked-out {
             border-left: 5px solid #ffc107;
             background: #fff3cd;
         }
-        
+
         /* Fully returned - green */
         .checklist-item.completed {
             border-left: 5px solid #28a745;
             background: #d4edda;
         }
-        
+
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -319,22 +324,22 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .status-badge.not-started {
             background: #e9ecef;
             color: #495057;
         }
-        
+
         .status-badge.checked-out {
             background: #ffc107;
             color: #000;
         }
-        
+
         .status-badge.completed {
             background: #28a745;
             color: white;
         }
-        
+
         .progress-bar {
             width: 100%;
             height: 30px;
@@ -343,7 +348,7 @@
             overflow: hidden;
             margin: 10px 0;
         }
-        
+
         .progress-fill {
             height: 100%;
             background: #28a745;
@@ -354,7 +359,7 @@
             color: white;
             font-weight: bold;
         }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -364,9 +369,9 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0,0,0,0.4);
+            background-color: rgba(0, 0, 0, 0.4);
         }
-        
+
         .modal-content {
             background-color: #fefefe;
             margin: 5% auto;
@@ -378,7 +383,7 @@
             max-height: 80vh;
             overflow-y: auto;
         }
-        
+
         .close {
             color: #aaa;
             float: right;
@@ -386,28 +391,28 @@
             font-weight: bold;
             cursor: pointer;
         }
-        
+
         .close:hover {
             color: black;
         }
-        
+
         .form-group {
             margin-bottom: 15px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .equipment-select-list {
             max-height: 300px;
             overflow-y: auto;
@@ -415,7 +420,7 @@
             padding: 10px;
             margin-top: 10px;
         }
-        
+
         .equipment-select-item {
             padding: 8px;
             margin: 5px 0;
@@ -424,17 +429,108 @@
             cursor: pointer;
             border-radius: 3px;
         }
-        
+
         .equipment-select-item:hover {
             background: #e9e9e9;
         }
-        
+
         .equipment-select-item.selected {
             background: #d4edda;
             border-color: #28a745;
         }
+
+        /* Photo Support Styles - ADD THESE */
+        .equipment-photo {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+        }
+
+        .equipment-photo:hover {
+            border-color: #333;
+        }
+
+        .no-photo {
+            width: 60px;
+            height: 60px;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .no-photo:hover {
+            background: #d0d0d0;
+        }
+
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .modal-photo {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content-photo {
+            position: relative;
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #5cb85c;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+
+        .file-input-label:hover {
+            background: #4cae4c;
+        }
     </style>
 </head>
+
 <body>
     <h1>Equipment Tracker with Events</h1>
 
@@ -467,15 +563,33 @@
         <!-- ADD NEW EQUIPMENT -->
         <div class="section">
             <h2>Add New Equipment</h2>
-            <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., Projector-01)" style="width: 400px;">
-            <button onclick="addEquipment()">Add Equipment</button>
+            <form id="add-equipment-form" onsubmit="addEquipment(event); return false;">
+                <div>
+                    <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., Projector-01)"
+                        style="width: 400px;" required>
+                </div>
+                <div style="margin-top: 10px;">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="equipment-photo" accept="image/*" onchange="previewPhoto(event)">
+                        <label for="equipment-photo" class="file-input-label">Choose Photo (Optional)</label>
+                    </div>
+                    <span id="photo-filename" style="margin-left: 10px; color: #666;"></span>
+                </div>
+                <div id="photo-preview-container" class="hidden">
+                    <img id="photo-preview" class="photo-preview">
+                    <button type="button" onclick="clearPhotoPreview()" class="danger"
+                        style="display: block; margin-top: 5px;">Remove Photo</button>
+                </div>
+                <button type="submit" style="margin-top: 10px;">Add Equipment</button>
+            </form>
         </div>
 
         <!-- BULK IMPORT -->
         <div class="section">
             <h2>Bulk Add Equipment</h2>
             <p>Enter multiple equipment names, one per line:</p>
-            <textarea id="bulk-equipment" rows="5" style="width: 100%; padding: 10px; font-size: 16px;" placeholder="Projector-01&#10;Speaker-A&#10;Laptop-03&#10;..."></textarea>
+            <textarea id="bulk-equipment" rows="5" style="width: 100%; padding: 10px; font-size: 16px;"
+                placeholder="Projector-01&#10;Speaker-A&#10;Laptop-03&#10;..."></textarea>
             <button onclick="bulkAddEquipment()">Add All</button>
         </div>
 
@@ -490,9 +604,9 @@
 
         <!-- GENERATE QR CODES -->
         <div class="section">
-            <h2>Generate QR Codes</h2>
-            <button onclick="generateAllQRCodes()">Generate QR Codes for All Equipment</button>
-            <button onclick="window.print()" id="print-btn" class="hidden">Print QR Codes</button>
+            <h2>Generate Barcodes</h2>
+            <button onclick="generateAllQRCodes()">Generate Barcodes for All Equipment</button>
+            <button onclick="window.print()" id="print-btn" class="hidden">Print Barcodes</button>
             <div id="qr-codes-container"></div>
         </div>
 
@@ -500,7 +614,8 @@
         <div class="section">
             <h2>All Equipment</h2>
             <div style="margin-bottom: 10px;">
-                <input type="text" id="search-box" placeholder="Search equipment..." style="width: 300px;" onkeyup="filterEquipment()">
+                <input type="text" id="search-box" placeholder="Search equipment..." style="width: 300px;"
+                    onkeyup="filterEquipment()">
                 <select id="filter-status" onchange="filterEquipment()" style="width: 150px;">
                     <option value="ALL">All Status</option>
                     <option value="IN">In Warehouse</option>
@@ -510,6 +625,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Photo</th>
                         <th>ID</th>
                         <th>Name</th>
                         <th>Status</th>
@@ -530,7 +646,7 @@
                 <h2>Events Management</h2>
                 <button class="success" onclick="showCreateEventModal()">+ Create New Event</button>
             </div>
-            
+
             <div style="margin: 20px 0;">
                 <select id="event-filter-status" onchange="filterEvents()" style="width: 200px;">
                     <option value="ALL">All Events</option>
@@ -539,7 +655,7 @@
                     <option value="COMPLETED">Completed</option>
                 </select>
             </div>
-            
+
             <div id="events-list"></div>
         </div>
     </div>
@@ -550,11 +666,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h2>Equipment Templates</h2>
-                    <p style="color: #666; margin-top: 5px;">Create reusable equipment lists for different event types</p>
+                    <p style="color: #666; margin-top: 5px;">Create reusable equipment lists for different event types
+                    </p>
                 </div>
                 <button class="success" onclick="showCreateTemplateModal()">+ Create Template</button>
             </div>
-            
+
             <div id="templates-list" style="margin-top: 20px;"></div>
         </div>
     </div>
@@ -564,7 +681,7 @@
         <!-- SCAN SECTION -->
         <div class="section">
             <h2>Scan Equipment</h2>
-            
+
             <div class="form-group">
                 <label>Your Name*</label>
                 <input type="text" id="scanner-user-name" placeholder="Enter your name" style="width: 300px;">
@@ -572,30 +689,31 @@
                     This will be logged with each scan for tracking purposes
                 </small>
             </div>
-            
+
             <div class="form-group">
                 <label>Select Event (Optional):</label>
                 <select id="scan-event-select" style="width: 400px;">
                     <option value="">No Event (Manual Check In/Out)</option>
                 </select>
             </div>
-            
+
             <!-- Manual/Barcode Scanner Input -->
             <div>
-                <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus style="width: 400px;">
+                <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus
+                    style="width: 400px;">
                 <button onclick="processManualScan()">Submit</button>
             </div>
-            
+
             <!-- Camera Scanner -->
             <div style="margin-top: 20px;">
                 <button onclick="startCameraScanner()">Use Camera Scanner</button>
                 <button onclick="stopCameraScanner()" class="hidden" id="stop-camera-btn">Stop Camera</button>
             </div>
             <div id="scanner-container" class="hidden"></div>
-            
+
             <div id="scan-result" class="hidden"></div>
         </div>
-        
+
         <!-- RECENT ACTIVITY -->
         <div class="section">
             <h2>Recent Scan Activity</h2>
@@ -608,13 +726,13 @@
         <div class="modal-content">
             <span class="close" onclick="closeEventModal()">&times;</span>
             <h2 id="event-modal-title">Create New Event</h2>
-            
+
             <form id="event-form" onsubmit="return false;">
                 <div class="form-group">
                     <label>Event Name*</label>
                     <input type="text" id="event-name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Event Type*</label>
                     <select id="event-type" required>
@@ -628,7 +746,7 @@
                         <option value="Other">Other</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Equipment Template (Optional)</label>
                     <select id="event-template" style="margin-bottom: 5px;">
@@ -637,26 +755,28 @@
                     <small style="color: #666; display: block;">
                         Select a template to automatically add equipment to your checklist
                     </small>
-                    <small id="no-templates-hint" style="color: #2196F3; display: none; margin-top: 5px; cursor: pointer;" onclick="goToTemplatesTab()">
+                    <small id="no-templates-hint"
+                        style="color: #2196F3; display: none; margin-top: 5px; cursor: pointer;"
+                        onclick="goToTemplatesTab()">
                         → No templates yet? Click here to create one
                     </small>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Event Date*</label>
                     <input type="date" id="event-date" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Location</label>
                     <input type="text" id="event-location" placeholder="Event venue or address">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Notes</label>
                     <textarea id="event-notes" rows="3" placeholder="Additional notes about the event"></textarea>
                 </div>
-                
+
                 <button type="button" onclick="saveEvent()" class="success">Save Event</button>
                 <button type="button" onclick="closeEventModal()" class="secondary">Cancel</button>
             </form>
@@ -676,11 +796,12 @@
         <div class="modal-content">
             <span class="close" onclick="closeAddEquipmentModal()">&times;</span>
             <h2>Add Equipment to Event</h2>
-            
-            <input type="text" id="equipment-search" placeholder="Search equipment..." style="width: 100%; margin-bottom: 10px;" onkeyup="searchEquipmentForEvent()">
-            
+
+            <input type="text" id="equipment-search" placeholder="Search equipment..."
+                style="width: 100%; margin-bottom: 10px;" onkeyup="searchEquipmentForEvent()">
+
             <div class="equipment-select-list" id="equipment-select-list"></div>
-            
+
             <div style="margin-top: 15px;">
                 <button onclick="addSelectedEquipmentToEvent()" class="success">Add Selected Equipment</button>
                 <button onclick="closeAddEquipmentModal()" class="secondary">Cancel</button>
@@ -693,18 +814,20 @@
         <div class="modal-content">
             <span class="close" onclick="closeTemplateModal()">&times;</span>
             <h2>Create Equipment Template</h2>
-            
+
             <form id="template-form" onsubmit="return false;">
                 <div class="form-group">
                     <label>Template Name*</label>
-                    <input type="text" id="template-name" required placeholder="e.g., Wedding Package, Conference Setup">
+                    <input type="text" id="template-name" required
+                        placeholder="e.g., Wedding Package, Conference Setup">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Description</label>
-                    <textarea id="template-description" rows="2" placeholder="Brief description of this template"></textarea>
+                    <textarea id="template-description" rows="2"
+                        placeholder="Brief description of this template"></textarea>
                 </div>
-                
+
                 <button type="button" onclick="saveTemplate()" class="success">Create Template</button>
                 <button type="button" onclick="closeTemplateModal()" class="secondary">Cancel</button>
             </form>
@@ -727,6 +850,22 @@
         </div>
     </div>
 
+    <!-- Photo Modal -->
+    <div id="photo-modal" class="modal-photo" onclick="closePhotoModal(event)">
+        <div class="modal-content-photo" onclick="event.stopPropagation()">
+            <span class="close" onclick="closePhotoModal()">&times;</span>
+            <h2 id="modal-equipment-name"></h2>
+            <img id="modal-photo" class="modal-image">
+            <div style="margin-top: 15px;">
+                <div class="file-input-wrapper">
+                    <input type="file" id="update-photo-input" accept="image/*" onchange="updateEquipmentPhoto()">
+                    <label for="update-photo-input" class="file-input-label">Change Photo</label>
+                </div>
+                <button onclick="deleteEquipmentPhoto()" class="danger">Delete Photo</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let equipment = [];
         let events = [];
@@ -736,9 +875,10 @@
         let currentTemplateId = null;
         let selectedEquipment = new Set();
         let html5QrCode = null;
+        let currentPhotoEquipmentId = null;
 
         // Initialize
-        window.onload = function() {
+        window.onload = function () {
             loadEquipment();
             loadEvents();
             loadTemplates();
@@ -746,7 +886,7 @@
 
         // Tab management
         // ==================== EQUIPMENT FUNCTIONS ====================
-        
+
         async function loadEquipment() {
             try {
                 const response = await fetch('/api/equipment');
@@ -758,25 +898,35 @@
             }
         }
 
-        async function addEquipment() {
+        async function addEquipment(event) {
+            if (event) event.preventDefault();
+
             const name = document.getElementById('new-equipment-name').value.trim();
             if (!name) {
                 alert('Please enter equipment name');
                 return;
             }
 
+            const formData = new FormData();
+            formData.append('name', name);
+
+            const photoFile = document.getElementById('equipment-photo').files[0];
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
+
             try {
                 const response = await fetch('/api/equipment', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name })
+                    body: formData
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     document.getElementById('new-equipment-name').value = '';
+                    clearPhotoPreview();
                     loadEquipment();
                 } else {
                     showMessage('Error: ' + data.error, 'error');
@@ -794,7 +944,7 @@
             }
 
             const names = text.split('\n').filter(name => name.trim());
-            
+
             for (const name of names) {
                 try {
                     await fetch('/api/equipment', {
@@ -816,7 +966,7 @@
             const total = equipment.length;
             const inWarehouse = equipment.filter(eq => eq.status === 'IN').length;
             const out = equipment.filter(eq => eq.status === 'OUT').length;
-            
+
             document.getElementById('stat-total').textContent = total;
             document.getElementById('stat-in').textContent = inWarehouse;
             document.getElementById('stat-out').textContent = out;
@@ -834,7 +984,7 @@
         // Camera scanner
         function startCameraScanner() {
             html5QrCode = new Html5Qrcode("scanner-container");
-            
+
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
@@ -868,10 +1018,10 @@
                 document.getElementById('scanner-user-name')?.focus();
                 return;
             }
-            
+
             let location = '';
             const eventId = document.getElementById('scan-event-select')?.value || '';
-            
+
             // Check if equipment is being checked out
             const item = equipment.find(eq => eq.id === code);
             if (item && item.status === 'IN' && !eventId) {
@@ -886,16 +1036,16 @@
                 const response = await fetch('/api/scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        code: code, 
-                        location: location, 
+                    body: JSON.stringify({
+                        code: code,
+                        location: location,
                         event_id: eventId,
                         scanned_by: userName
                     })
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     loadEquipment();
@@ -917,7 +1067,7 @@
             resultDiv.textContent = message;
             resultDiv.className = 'message message-' + type;
             resultDiv.classList.remove('hidden');
-            
+
             setTimeout(() => {
                 resultDiv.classList.add('hidden');
             }, 5000);
@@ -929,18 +1079,17 @@
             tbody.innerHTML = '';
 
             let filteredEquipment = [...equipment];
-            
-            // Apply filters
+
             const searchTerm = document.getElementById('search-box').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
-            
+
             if (searchTerm) {
-                filteredEquipment = filteredEquipment.filter(item => 
-                    item.name.toLowerCase().includes(searchTerm) || 
+                filteredEquipment = filteredEquipment.filter(item =>
+                    item.name.toLowerCase().includes(searchTerm) ||
                     item.id.toLowerCase().includes(searchTerm)
                 );
             }
-            
+
             if (statusFilter !== 'ALL') {
                 filteredEquipment = filteredEquipment.filter(item => item.status === statusFilter);
             }
@@ -948,18 +1097,27 @@
             filteredEquipment.forEach(item => {
                 const row = tbody.insertRow();
                 row.className = item.status === 'IN' ? 'status-in' : 'status-out';
-                
-                row.innerHTML = `
-                    <td>${item.id}</td>
-                    <td>${item.name}</td>
-                    <td><strong>${item.status}</strong></td>
-                    <td>${item.location}</td>
-                    <td>${item.last_updated}</td>
-                    <td>
-                        <button onclick="viewEquipmentHistory('${item.id}', '${item.name}')" class="secondary">View History</button>
-                        <button onclick="deleteEquipment('${item.id}')" class="danger">Delete</button>
-                    </td>
-                `;
+
+                // Photo cell - ADD THIS
+                const photoCell = row.insertCell();
+                if (item.photo) {
+                    photoCell.innerHTML = `<img src="/uploads/photos/${item.photo}" class="equipment-photo" onclick="openPhotoModal('${item.id}')" alt="${item.name}">`;
+                } else {
+                    photoCell.innerHTML = `<div class="no-photo" onclick="openPhotoModal('${item.id}', true)">📷</div>`;
+                }
+
+                // Rest of the row
+                row.innerHTML += `
+            <td>${item.id}</td>
+            <td>${item.name}</td>
+            <td><strong>${item.status}</strong></td>
+            <td>${item.location}</td>
+            <td>${item.last_updated}</td>
+            <td>
+                <button onclick="viewEquipmentHistory('${item.id}', '${item.name}')" class="secondary">View History</button>
+                <button onclick="deleteEquipment('${item.id}')" class="danger">Delete</button>
+            </td>
+        `;
             });
         }
 
@@ -971,12 +1129,12 @@
         // Delete equipment
         async function deleteEquipment(id) {
             if (!confirm('Delete this equipment?')) return;
-            
+
             try {
                 const response = await fetch(`/api/equipment/${id}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     showMessage('Equipment deleted', 'success');
                     loadEquipment();
@@ -993,15 +1151,15 @@
             try {
                 const response = await fetch('/api/export');
                 const data = await response.json();
-                
+
                 const dataStr = JSON.stringify(data, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = 'equipment-backup-' + new Date().toISOString().split('T')[0] + '.json';
                 link.click();
-                
+
                 showMessage('Backup downloaded successfully', 'success');
             } catch (error) {
                 showMessage('Error exporting data: ' + error.message, 'error');
@@ -1013,19 +1171,19 @@
             try {
                 const response = await fetch('/api/export');
                 const data = await response.json();
-                
+
                 let csv = 'ID,Name,Status,Location,Last Updated\n';
                 data.forEach(item => {
                     csv += `"${item.id}","${item.name}","${item.status}","${item.location}","${item.last_updated}"\n`;
                 });
-                
-                const blob = new Blob([csv], {type: 'text/csv'});
+
+                const blob = new Blob([csv], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = 'equipment-' + new Date().toISOString().split('T')[0] + '.csv';
                 link.click();
-                
+
                 showMessage('CSV downloaded successfully', 'success');
             } catch (error) {
                 showMessage('Error exporting CSV: ' + error.message, 'error');
@@ -1036,18 +1194,18 @@
         async function importData() {
             const file = document.getElementById('import-file').files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = async function (e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    
+
                     const response = await fetch('/api/import', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ equipment: data })
                     });
-                    
+
                     const result = await response.json();
                     if (response.ok) {
                         showMessage(result.message, 'success');
@@ -1065,36 +1223,40 @@
         // Generate QR codes
         function generateAllQRCodes() {
             const container = document.getElementById('qr-codes-container');
-            container.innerHTML = '<p>Generating codes...</p>';
+            container.innerHTML = '<p>Generating barcodes...</p>';
 
             setTimeout(() => {
                 container.innerHTML = '';
-                
+
                 equipment.forEach(item => {
-                    const qrDiv = document.createElement('div');
-                    qrDiv.className = 'qr-code';
-                    qrDiv.innerHTML = `
-                        <h3>${item.name}</h3>
-                        <div style="margin: 10px 0;">
-                            <strong>QR Code:</strong><br>
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(item.id)}" alt="QR Code" style="border: 1px solid #ccc; padding: 10px; background: white;">
-                        </div>
-                        <div style="margin: 10px 0;">
-                            <strong>Barcode:</strong><br>
-                            <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(item.id)}&code=Code128&translate-esc=on&eclevel=L" alt="Barcode" style="max-width: 250px;">
-                        </div>
-                        <p><strong>ID: ${item.id}</strong></p>
-                    `;
-                    container.appendChild(qrDiv);
+                    const barcodeDiv = document.createElement('div');
+                    barcodeDiv.className = 'qr-code';
+
+                    // Add photo if available
+                    let photoHtml = '';
+                    if (item.photo) {
+                        photoHtml = `<img src="/uploads/photos/${item.photo}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 10px;">`;
+                    }
+
+                    barcodeDiv.innerHTML = `
+                ${photoHtml}
+                <h3>${item.name}</h3>
+                <div style="margin: 20px 0;">
+                    <strong>Barcode:</strong><br>
+                    <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(item.id)}&code=Code128&translate-esc=on&eclevel=L" alt="Barcode" style="max-width: 300px; height: auto;">
+                </div>
+                <p><strong>ID: ${item.id}</strong></p>
+            `;
+                    container.appendChild(barcodeDiv);
                 });
-                
+
                 document.getElementById('print-btn').classList.remove('hidden');
-                showMessage('Codes generated! Print and test which works better with your scanner.', 'success');
+                showMessage('Barcodes generated! Ready to print.', 'success');
             }, 100);
         }
 
         // ==================== EVENTS FUNCTIONS ====================
-        
+
         async function loadEvents() {
             try {
                 const response = await fetch('/api/events');
@@ -1109,10 +1271,10 @@
             try {
                 const response = await fetch('/api/events');
                 events = await response.json();
-                
+
                 const select = document.getElementById('scan-event-select');
                 select.innerHTML = '<option value="">No Event (Manual Check In/Out)</option>';
-                
+
                 // Only show PLANNING and ACTIVE events
                 events.filter(e => e.status === 'PLANNING' || e.status === 'ACTIVE')
                     .forEach(event => {
@@ -1129,26 +1291,26 @@
         function displayEvents() {
             const container = document.getElementById('events-list');
             container.innerHTML = '';
-            
+
             let filteredEvents = [...events];
             const statusFilter = document.getElementById('event-filter-status').value;
-            
+
             if (statusFilter !== 'ALL') {
                 filteredEvents = filteredEvents.filter(e => e.status === statusFilter);
             }
-            
+
             if (filteredEvents.length === 0) {
                 container.innerHTML = '<p>No events found. Create your first event!</p>';
                 return;
             }
-            
+
             filteredEvents.forEach(event => {
                 const card = document.createElement('div');
                 card.className = 'event-card event-' + event.status.toLowerCase();
                 card.onclick = () => viewEventDetails(event.id);
-                
+
                 const badgeClass = 'badge-' + event.status.toLowerCase();
-                
+
                 card.innerHTML = `
                     <div class="event-header">
                         <div>
@@ -1163,7 +1325,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 container.appendChild(card);
             });
         }
@@ -1188,23 +1350,23 @@
             try {
                 const response = await fetch(`/api/events/${eventId}`);
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     showMessage('Error loading event details', 'error');
                     return;
                 }
-                
+
                 currentEvent = data.event;
                 const checklist = data.checklist;
-                
+
                 // Calculate progress
                 const total = checklist.length;
                 const checkedOut = checklist.filter(item => item.checked_out).length;
                 const checkedIn = checklist.filter(item => item.checked_in).length;
                 const progress = total > 0 ? Math.round((checkedOut / total) * 100) : 0;
-                
+
                 const badgeClass = 'badge-' + currentEvent.status.toLowerCase();
-                
+
                 let content = `
                     <h2>${currentEvent.name}</h2>
                     <div style="margin-bottom: 20px;">
@@ -1218,7 +1380,7 @@
                     <h3>Equipment Checklist (${total} items)</h3>
                     
                     <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 12px; margin: 15px 0; border-radius: 4px;">
-                        <strong>📱 Scan to Update:</strong> Go to the Scanner tab, select this event, and scan equipment barcodes to update this checklist automatically.
+                        <strong>Scan to Update:</strong> Go to the Scanner tab, select this event, and scan equipment barcodes to update this checklist automatically.
                     </div>
                     
                     <div class="progress-bar">
@@ -1235,7 +1397,7 @@
                     
                     <div style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
                 `;
-                
+
                 if (checklist.length === 0) {
                     content += '<p>No equipment added yet. Click "Add Equipment" to start building your checklist.</p>';
                 } else {
@@ -1244,7 +1406,7 @@
                         let itemClass = 'not-started';
                         let statusBadgeClass = 'not-started';
                         let statusText = 'Pending';
-                        
+
                         if (item.checked_out && item.checked_in) {
                             itemClass = 'completed';
                             statusBadgeClass = 'completed';
@@ -1254,10 +1416,11 @@
                             statusBadgeClass = 'checked-out';
                             statusText = 'Out';
                         }
-                        
+
                         content += `
                             <div class="checklist-item ${itemClass}">
                                 <div style="flex: 1;">
+                                    ${item.photo ? `<img src="/uploads/photos/${item.photo}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 3px; margin-right: 10px; float: left;">` : ''}
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <strong style="font-size: 16px;">${item.name}</strong>
                                         <span class="status-badge ${statusBadgeClass}">${statusText}</span>
@@ -1276,9 +1439,9 @@
                         `;
                     });
                 }
-                
+
                 content += '</div>';
-                
+
                 document.getElementById('event-details-content').innerHTML = content;
                 document.getElementById('event-details-modal').style.display = 'block';
             } catch (error) {
@@ -1297,7 +1460,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
                 });
-                
+
                 if (response.ok) {
                     showMessage('Event status updated', 'success');
                     closeEventDetailsModal();
@@ -1312,12 +1475,12 @@
 
         async function deleteEvent(eventId) {
             if (!confirm('Delete this event and its checklist?')) return;
-            
+
             try {
                 const response = await fetch(`/api/events/${eventId}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     showMessage('Event deleted', 'success');
                     closeEventDetailsModal();
@@ -1344,14 +1507,14 @@
         function displayEquipmentForSelection() {
             const container = document.getElementById('equipment-select-list');
             container.innerHTML = '';
-            
+
             const searchTerm = document.getElementById('equipment-search').value.toLowerCase();
-            
-            let filteredEquipment = equipment.filter(eq => 
-                eq.name.toLowerCase().includes(searchTerm) || 
+
+            let filteredEquipment = equipment.filter(eq =>
+                eq.name.toLowerCase().includes(searchTerm) ||
                 eq.id.toLowerCase().includes(searchTerm)
             );
-            
+
             filteredEquipment.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'equipment-select-item';
@@ -1383,7 +1546,7 @@
                 alert('Please select at least one equipment item');
                 return;
             }
-            
+
             for (const equipmentId of selectedEquipment) {
                 try {
                     await fetch(`/api/events/${currentEventId}/checklist`, {
@@ -1395,7 +1558,7 @@
                     console.error('Error adding equipment:', error);
                 }
             }
-            
+
             showMessage(`Added ${selectedEquipment.size} items to checklist`, 'success');
             closeAddEquipmentModal();
             viewEventDetails(currentEventId);
@@ -1403,12 +1566,12 @@
 
         async function removeFromChecklist(eventId, itemId) {
             if (!confirm('Remove this equipment from the checklist?')) return;
-            
+
             try {
                 const response = await fetch(`/api/events/${eventId}/checklist/${itemId}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     showMessage('Equipment removed from checklist', 'success');
                     viewEventDetails(eventId);
@@ -1421,7 +1584,7 @@
         }
 
         // ==================== TEMPLATES FUNCTIONS ====================
-        
+
         async function loadTemplates() {
             try {
                 const response = await fetch('/api/templates');
@@ -1436,19 +1599,19 @@
         function displayTemplates() {
             const container = document.getElementById('templates-list');
             if (!container) return;
-            
+
             container.innerHTML = '';
-            
+
             if (templates.length === 0) {
                 container.innerHTML = '<p>No templates created yet. Create your first template to save time on future events!</p>';
                 return;
             }
-            
+
             templates.forEach(template => {
                 const card = document.createElement('div');
                 card.className = 'event-card';
                 card.onclick = () => viewTemplateDetails(template.id);
-                
+
                 card.innerHTML = `
                     <div class="event-header">
                         <div>
@@ -1459,7 +1622,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 container.appendChild(card);
             });
         }
@@ -1480,21 +1643,21 @@
         async function saveTemplate() {
             const name = document.getElementById('template-name').value.trim();
             const description = document.getElementById('template-description').value.trim();
-            
+
             if (!name) {
                 alert('Please enter template name');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, description })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showMessage('Template created successfully', 'success');
                     closeTemplateModal();
@@ -1511,16 +1674,16 @@
             try {
                 const response = await fetch(`/api/templates/${templateId}`);
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     showMessage('Error loading template details', 'error');
                     return;
                 }
-                
+
                 currentTemplateId = templateId;
                 const template = data.template;
                 const items = data.items;
-                
+
                 let content = `
                     <h2>${template.name}</h2>
                     <p style="color: #666; margin-bottom: 20px;">${template.description || 'No description'}</p>
@@ -1534,7 +1697,7 @@
                     
                     <div style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
                 `;
-                
+
                 if (items.length === 0) {
                     content += '<p>No equipment added yet. Click "Add Equipment" to start building this template.</p>';
                 } else {
@@ -1560,9 +1723,9 @@
                         }
                     });
                 }
-                
+
                 content += '</div>';
-                
+
                 document.getElementById('template-details-content').innerHTML = content;
                 document.getElementById('template-details-modal').style.display = 'block';
             } catch (error) {
@@ -1582,7 +1745,7 @@
                 alert('Please select at least one equipment item');
                 return;
             }
-            
+
             for (const equipmentId of selectedEquipment) {
                 try {
                     await fetch(`/api/templates/${currentTemplateId}/items`, {
@@ -1594,7 +1757,7 @@
                     console.error('Error adding equipment:', error);
                 }
             }
-            
+
             showMessage(`Added ${selectedEquipment.size} items to template`, 'success');
             closeAddEquipmentModal();
             viewTemplateDetails(currentTemplateId);
@@ -1602,12 +1765,12 @@
 
         async function removeFromTemplate(templateId, itemId) {
             if (!confirm('Remove this equipment from the template?')) return;
-            
+
             try {
                 const response = await fetch(`/api/templates/${templateId}/items/${itemId}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     showMessage('Equipment removed from template', 'success');
                     viewTemplateDetails(templateId);
@@ -1622,12 +1785,12 @@
 
         async function deleteTemplate(templateId) {
             if (!confirm('Delete this template? This cannot be undone.')) return;
-            
+
             try {
                 const response = await fetch(`/api/templates/${templateId}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.ok) {
                     showMessage('Template deleted', 'success');
                     closeTemplateDetailsModal();
@@ -1644,7 +1807,7 @@
             const select = document.getElementById('event-template');
             const hint = document.getElementById('no-templates-hint');
             if (!select) return;
-            
+
             select.innerHTML = '<option value="">None - I\'ll add equipment manually</option>';
             templates.forEach(template => {
                 const option = document.createElement('option');
@@ -1652,7 +1815,7 @@
                 option.textContent = template.name;
                 select.appendChild(option);
             });
-            
+
             // Show hint if no templates exist
             if (hint) {
                 hint.style.display = templates.length === 0 ? 'block' : 'none';
@@ -1672,21 +1835,21 @@
             const location = document.getElementById('event-location').value.trim();
             const notes = document.getElementById('event-notes').value.trim();
             const templateId = document.getElementById('event-template')?.value;
-            
+
             if (!name || !type || !date) {
                 alert('Please fill in all required fields');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/events', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, type, date, location, notes })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     // If template selected, apply it
                     if (templateId) {
@@ -1698,7 +1861,7 @@
                     } else {
                         showMessage('Event created successfully', 'success');
                     }
-                    
+
                     closeEventModal();
                     loadEvents();
                 } else {
@@ -1724,12 +1887,12 @@
                 alert('Please select at least one equipment item');
                 return;
             }
-            
+
             // Check if we're adding to template or event
             if (currentTemplateId) {
                 return addSelectedEquipmentToTemplate();
             }
-            
+
             for (const equipmentId of selectedEquipment) {
                 try {
                     await fetch(`/api/events/${currentEventId}/checklist`, {
@@ -1741,7 +1904,7 @@
                     console.error('Error adding equipment:', error);
                 }
             }
-            
+
             showMessage(`Added ${selectedEquipment.size} items to checklist`, 'success');
             closeAddEquipmentModal();
             viewEventDetails(currentEventId);
@@ -1756,10 +1919,10 @@
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
+
             // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
-            
+
             // Activate the clicked nav tab if provided
             if (clickedElement) {
                 clickedElement.classList.add('active');
@@ -1771,7 +1934,7 @@
                     navTabs[tabIndex].classList.add('active');
                 }
             }
-            
+
             // Load data if needed
             if (tabName === 'events') {
                 loadEvents();
@@ -1784,27 +1947,27 @@
         }
 
         // ==================== HISTORY FUNCTIONS ====================
-        
+
         async function loadRecentActivity() {
             try {
                 const response = await fetch('/api/history?limit=20');
                 const history = await response.json();
-                
+
                 const container = document.getElementById('recent-activity');
                 if (!container) return;
-                
+
                 if (history.length === 0) {
                     container.innerHTML = '<p>No recent activity</p>';
                     return;
                 }
-                
+
                 let html = '<table><thead><tr><th>Time</th><th>Equipment</th><th>Action</th><th>Event</th><th>Location</th><th>Scanned By</th></tr></thead><tbody>';
-                
+
                 history.forEach(item => {
                     const actionClass = item.action === 'CHECK_OUT' ? 'status-out' : 'status-in';
                     const actionText = item.action === 'CHECK_OUT' ? 'OUT' : 'IN';
                     const eventText = item.event_name || '-';
-                    
+
                     html += `
                         <tr class="${actionClass}">
                             <td>${item.timestamp}</td>
@@ -1816,7 +1979,7 @@
                         </tr>
                     `;
                 });
-                
+
                 html += '</tbody></table>';
                 container.innerHTML = html;
             } catch (error) {
@@ -1828,12 +1991,12 @@
             try {
                 const response = await fetch(`/api/equipment/${equipmentId}/history`);
                 const history = await response.json();
-                
+
                 let content = `
                     <h2>History: ${equipmentName}</h2>
                     <p style="color: #666; margin-bottom: 20px;">ID: ${equipmentId}</p>
                 `;
-                
+
                 if (history.length === 0) {
                     content += '<p>No history found for this equipment.</p>';
                 } else {
@@ -1850,12 +2013,12 @@
                             </thead>
                             <tbody>
                     `;
-                    
+
                     history.forEach(item => {
                         const actionClass = item.action === 'CHECK_OUT' ? 'status-out' : 'status-in';
-                        const actionText = item.action === 'CHECK_OUT' ? '📤 Checked OUT' : '📥 Checked IN';
+                        const actionText = item.action === 'CHECK_OUT' ? '✗ Checked OUT' : '✓ Checked IN';
                         const eventText = item.event_name || '-';
-                        
+
                         content += `
                             <tr class="${actionClass}">
                                 <td>${item.timestamp}</td>
@@ -1866,10 +2029,10 @@
                             </tr>
                         `;
                     });
-                    
+
                     content += '</tbody></table>';
                 }
-                
+
                 document.getElementById('equipment-history-content').innerHTML = content;
                 document.getElementById('equipment-history-modal').style.display = 'block';
             } catch (error) {
@@ -1882,11 +2045,117 @@
         }
 
         // Close modals when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.className === 'modal') {
                 event.target.style.display = 'none';
             }
         }
+
+        // ==================== PHOTO FUNCTIONS ====================
+
+        // Photo preview
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('photo-preview').src = e.target.result;
+                    document.getElementById('photo-preview-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+                document.getElementById('photo-filename').textContent = file.name;
+            }
+        }
+
+        // Clear photo preview
+        function clearPhotoPreview() {
+            document.getElementById('equipment-photo').value = '';
+            document.getElementById('photo-preview').src = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-filename').textContent = '';
+        }
+
+        // Open photo modal
+        function openPhotoModal(equipmentId, noPhoto = false) {
+            const item = equipment.find(e => e.id === equipmentId);
+            if (!item) return;
+
+            currentPhotoEquipmentId = equipmentId;
+            document.getElementById('modal-equipment-name').textContent = item.name;
+
+            if (item.photo && !noPhoto) {
+                document.getElementById('modal-photo').src = `/uploads/photos/${item.photo}`;
+                document.getElementById('modal-photo').style.display = 'block';
+            } else {
+                document.getElementById('modal-photo').style.display = 'none';
+            }
+
+            document.getElementById('photo-modal').style.display = 'block';
+        }
+
+        // Close photo modal
+        function closePhotoModal(event) {
+            if (!event || event.target.classList.contains('modal-photo')) {
+                document.getElementById('photo-modal').style.display = 'none';
+                currentPhotoEquipmentId = null;
+            }
+        }
+
+        // Update equipment photo
+        async function updateEquipmentPhoto() {
+            const fileInput = document.getElementById('update-photo-input');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            try {
+                const response = await fetch(`/api/equipment/${currentPhotoEquipmentId}/photo`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    loadEquipment();
+                    closePhotoModal();
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error updating photo: ' + error.message, 'error');
+            }
+
+            fileInput.value = '';
+        }
+
+        // Delete equipment photo
+        async function deleteEquipmentPhoto() {
+            if (!confirm('Delete this photo?')) return;
+
+            try {
+                const response = await fetch(`/api/equipment/${currentPhotoEquipmentId}/photo`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    loadEquipment();
+                    closePhotoModal();
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error deleting photo: ' + error.message, 'error');
+            }
+        }
     </script>
 </body>
+
 </html>
