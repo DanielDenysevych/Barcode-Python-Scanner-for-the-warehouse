@@ -42,6 +42,14 @@ def init_db():
         if 'photo' not in columns:
             # Add photo column to existing table
             conn.execute('ALTER TABLE equipment ADD COLUMN photo TEXT')
+            
+        if 'quantity' not in columns:
+        # Add quantity column - default to 1 for existing items
+            conn.execute('ALTER TABLE equipment ADD COLUMN quantity INTEGER DEFAULT 1')
+    
+        if 'quantity_out' not in columns:
+            # Track how many are currently checked out
+            conn.execute('ALTER TABLE equipment ADD COLUMN quantity_out INTEGER DEFAULT 0')
     else:
         # Create equipment table with photo field
         conn.execute('''
@@ -51,7 +59,9 @@ def init_db():
                 status TEXT NOT NULL,
                 location TEXT,
                 last_updated TEXT,
-                photo TEXT
+                photo TEXT,
+                quantity INTEGER DEFAULT 1,
+                quantity_out INTEGER DEFAULT 0
             )
         ''')
     
@@ -160,12 +170,17 @@ def add_equipment():
     # Handle both form data (with photo) and JSON (without photo)
     if request.content_type and 'multipart/form-data' in request.content_type:
         name = request.form.get('name')
+        quantity = request.form.get('quantity', 1, type=int)
     else:
         data = request.json
         name = data.get('name') if data else None
+        quantity = data.get('quantity', 1) if data else 1
     
     if not name:
         return jsonify({'error': 'Name is required'}), 400
+    
+    if quantity < 1:
+        quantity = 1
     
     # Generate unique ID
     equipment_id = 'EQ' + str(int(datetime.now().timestamp() * 1000))
@@ -175,7 +190,6 @@ def add_equipment():
     if 'photo' in request.files:
         file = request.files['photo']
         if file and file.filename and allowed_file(file.filename):
-            # Create filename with equipment ID
             ext = file.filename.rsplit('.', 1)[1].lower()
             filename = f"{equipment_id}.{ext}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -184,8 +198,8 @@ def add_equipment():
     
     conn = get_db()
     conn.execute(
-        'INSERT INTO equipment (id, name, status, location, last_updated, photo) VALUES (?, ?, ?, ?, ?, ?)',
-        (equipment_id, name, 'IN', 'Warehouse', datetime.now().strftime('%Y-%m-%d %H:%M:%S'), photo_path)
+        'INSERT INTO equipment (id, name, status, location, last_updated, photo, quantity, quantity_out) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        (equipment_id, name, 'IN', 'Warehouse', datetime.now().strftime('%Y-%m-%d %H:%M:%S'), photo_path, quantity, 0)
     )
     conn.commit()
     conn.close()
@@ -194,6 +208,7 @@ def add_equipment():
         'id': equipment_id, 
         'name': name, 
         'photo': photo_path,
+        'quantity': quantity,
         'message': 'Equipment added successfully'
     })
 
@@ -288,12 +303,13 @@ def delete_equipment(equipment_id):
 
 @app.route('/api/scan', methods=['POST'])
 def scan_equipment():
-    """Process equipment scan (check in/out)"""
+    """Process equipment scan (check in/out) with quantity support"""
     data = request.json
     code = data.get('code')
     location = data.get('location', '')
     event_id = data.get('event_id', '')
     scanned_by = data.get('scanned_by', 'Unknown User')
+    quantity = data.get('quantity', 1)  # How many to check in/out
     
     if not code:
         return jsonify({'error': 'Code is required'}), 400
@@ -314,12 +330,29 @@ def scan_equipment():
     
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    # Toggle status
-    if equipment['status'] == 'IN':
-        new_status = 'OUT'
+    # Calculate available and out quantities
+    total_qty = equipment['quantity']
+    current_out = equipment['quantity_out']
+    available = total_qty - current_out
+    
+    # Determine action based on current status
+    if equipment['status'] == 'IN' or (equipment['status'] == 'PARTIAL' and available > 0):
+        # Checking OUT
+        if quantity > available:
+            conn.close()
+            return jsonify({'error': f'Only {available} available to check out'}), 400
+        
+        new_quantity_out = current_out + quantity
+        
+        if new_quantity_out >= total_qty:
+            new_status = 'OUT'
+            message = f"{equipment['name']} - ALL {total_qty} checked OUT to: {location if location else 'Unknown'}"
+        else:
+            new_status = 'PARTIAL'
+            message = f"{equipment['name']} - {quantity} checked OUT (Total out: {new_quantity_out}/{total_qty}) to: {location if location else 'Unknown'}"
+        
         new_location = location if location else 'Unknown'
         action = 'CHECK_OUT'
-        message = f"{equipment['name']} checked OUT to: {new_location}"
         
         # If event_id provided, mark as checked out in event checklist
         if event_id:
@@ -327,30 +360,45 @@ def scan_equipment():
                 'UPDATE event_equipment SET checked_out = 1 WHERE event_id = ? AND equipment_id = ?',
                 (event_id, code)
             )
+    
     else:
-        new_status = 'IN'
-        new_location = 'Warehouse'
+        # Checking IN
+        if quantity > current_out:
+            quantity = current_out  # Can't check in more than what's out
+        
+        new_quantity_out = current_out - quantity
+        
+        if new_quantity_out == 0:
+            new_status = 'IN'
+            new_location = 'Warehouse'
+            message = f"{equipment['name']} - ALL {total_qty} checked IN to warehouse"
+        else:
+            new_status = 'PARTIAL'
+            new_location = equipment['location']  # Keep same location
+            message = f"{equipment['name']} - {quantity} checked IN (Still out: {new_quantity_out}/{total_qty})"
+        
         action = 'CHECK_IN'
-        message = f"{equipment['name']} checked IN to warehouse"
         
         # If event_id provided, mark as checked in
         if event_id:
-            conn.execute(
-                'UPDATE event_equipment SET checked_in = 1 WHERE event_id = ? AND equipment_id = ?',
-                (event_id, code)
-            )
+            # Only mark as fully checked in if all are back
+            if new_quantity_out == 0:
+                conn.execute(
+                    'UPDATE event_equipment SET checked_in = 1 WHERE event_id = ? AND equipment_id = ?',
+                    (event_id, code)
+                )
     
     # Update equipment status
     conn.execute(
-        'UPDATE equipment SET status = ?, location = ?, last_updated = ? WHERE id = ?',
-        (new_status, new_location, timestamp, code)
+        'UPDATE equipment SET status = ?, location = ?, last_updated = ?, quantity_out = ? WHERE id = ?',
+        (new_status, new_location, timestamp, new_quantity_out, code)
     )
     
     # Log to history
     conn.execute('''
-        INSERT INTO equipment_history (equipment_id, action, event_id, event_name, location, scanned_by, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (code, action, event_id, event_name, new_location, scanned_by, timestamp))
+        INSERT INTO equipment_history (equipment_id, action, event_id, event_name, location, scanned_by, timestamp, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (code, action, event_id, event_name, new_location, scanned_by, timestamp, f'Quantity: {quantity}'))
     
     conn.commit()
     conn.close()
@@ -362,7 +410,10 @@ def scan_equipment():
             'name': equipment['name'],
             'status': new_status,
             'location': new_location,
-            'photo': equipment['photo']
+            'photo': equipment['photo'],
+            'quantity': total_qty,
+            'quantity_out': new_quantity_out,
+            'quantity_available': total_qty - new_quantity_out
         }
     })
 

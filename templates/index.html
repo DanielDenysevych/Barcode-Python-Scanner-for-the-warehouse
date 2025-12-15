@@ -528,6 +528,35 @@
         .file-input-label:hover {
             background: #4cae4c;
         }
+
+        .status-partial {
+            background: #fff3cd;
+        }
+
+        .quantity-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .quantity-badge.full {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .quantity-badge.out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .quantity-badge.partial {
+            background: #fff3cd;
+            color: #856404;
+        }
     </style>
 </head>
 
@@ -565,13 +594,19 @@
             <h2>Add New Equipment</h2>
             <form id="add-equipment-form" onsubmit="addEquipment(event); return false;">
                 <div>
-                    <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., Projector-01)"
+                    <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., XLR Cable)"
                         style="width: 400px;" required>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="new-equipment-quantity">Quantity:</label>
+                    <input type="number" id="new-equipment-quantity" value="1" min="1" style="width: 100px;"
+                        placeholder="1">
+                    <small style="color: #666; margin-left: 10px;">How many of this item do you have?</small>
                 </div>
                 <div style="margin-top: 10px;">
                     <div class="file-input-wrapper">
                         <input type="file" id="equipment-photo" accept="image/*" onchange="previewPhoto(event)">
-                        <label for="equipment-photo" class="file-input-label">Choose Photo (Optional)</label>
+                        <label for="equipment-photo" class="file-input-label"> Choose Photo (Optional)</label>
                     </div>
                     <span id="photo-filename" style="margin-left: 10px; color: #666;"></span>
                 </div>
@@ -628,6 +663,7 @@
                         <th>Photo</th>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Quantity</th>
                         <th>Status</th>
                         <th>Location</th>
                         <th>Last Updated</th>
@@ -902,6 +938,8 @@
             if (event) event.preventDefault();
 
             const name = document.getElementById('new-equipment-name').value.trim();
+            const quantity = parseInt(document.getElementById('new-equipment-quantity').value) || 1;
+
             if (!name) {
                 alert('Please enter equipment name');
                 return;
@@ -909,6 +947,7 @@
 
             const formData = new FormData();
             formData.append('name', name);
+            formData.append('quantity', quantity);
 
             const photoFile = document.getElementById('equipment-photo').files[0];
             if (photoFile) {
@@ -924,8 +963,9 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showMessage(data.message, 'success');
+                    showMessage(data.message + ` (Quantity: ${quantity})`, 'success');
                     document.getElementById('new-equipment-name').value = '';
+                    document.getElementById('new-equipment-quantity').value = '1';
                     clearPhotoPreview();
                     loadEquipment();
                 } else {
@@ -1011,7 +1051,6 @@
 
         // Process scanned code
         async function processCode(code) {
-            // Get user name
             const userName = document.getElementById('scanner-user-name')?.value.trim();
             if (!userName) {
                 alert('Please enter your name before scanning');
@@ -1020,16 +1059,57 @@
             }
 
             let location = '';
+            let quantity = 1;
             const eventId = document.getElementById('scan-event-select')?.value || '';
 
-            // Check if equipment is being checked out
+            // Find the equipment
             const item = equipment.find(eq => eq.id === code);
-            if (item && item.status === 'IN' && !eventId) {
-                location = prompt('Where is this equipment going?', 'Event Location');
-                if (location === null) return; // Cancelled
-            } else if (item && item.status === 'IN' && eventId) {
-                const event = events.find(e => e.id === eventId);
-                location = event ? event.location : 'Event';
+
+            if (!item) {
+                showMessage('Equipment not found', 'error');
+                return;
+            }
+
+            const total = item.quantity || 1;
+            const currentOut = item.quantity_out || 0;
+            const available = total - currentOut;
+
+            // If multiple quantity items, ask how many
+            if (total > 1) {
+                if (item.status === 'IN' || item.status === 'PARTIAL') {
+                    // Checking out
+                    quantity = prompt(`How many ${item.name} to check out? (Available: ${available})`, '1');
+                    if (quantity === null) return; // Cancelled
+                    quantity = parseInt(quantity) || 1;
+
+                    if (quantity > available) {
+                        alert(`Only ${available} available!`);
+                        return;
+                    }
+
+                    if (!eventId) {
+                        location = prompt('Where is this equipment going?', 'Event Location');
+                        if (location === null) return;
+                    }
+                } else {
+                    // Checking in
+                    quantity = prompt(`How many ${item.name} to check in? (Out: ${currentOut})`, currentOut);
+                    if (quantity === null) return; // Cancelled
+                    quantity = parseInt(quantity) || 1;
+
+                    if (quantity > currentOut) {
+                        quantity = currentOut;
+                    }
+                }
+            } else {
+                // Single item - original behavior
+                if (item.status === 'IN' && !eventId) {
+                    location = prompt('Where is this equipment going?', 'Event Location');
+                    if (location === null) return;
+                } else if (eventId) {
+                    const event = events.find(e => e.id === eventId);
+                    location = event ? event.location : 'Event';
+                }
             }
 
             try {
@@ -1040,7 +1120,8 @@
                         code: code,
                         location: location,
                         event_id: eventId,
-                        scanned_by: userName
+                        scanned_by: userName,
+                        quantity: quantity
                     })
                 });
 
@@ -1049,9 +1130,9 @@
                 if (response.ok) {
                     showMessage(data.message, 'success');
                     loadEquipment();
-                    loadRecentActivity(); // Refresh activity log
+                    loadRecentActivity();
                     if (eventId) {
-                        loadEvents(); // Refresh event checklist status
+                        loadEvents();
                     }
                 } else {
                     showMessage('Error: ' + data.error, 'error');
@@ -1096,9 +1177,14 @@
 
             filteredEquipment.forEach(item => {
                 const row = tbody.insertRow();
-                row.className = item.status === 'IN' ? 'status-in' : 'status-out';
 
-                // Photo cell - ADD THIS
+                // Determine row class based on status
+                let rowClass = 'status-in';
+                if (item.status === 'OUT') rowClass = 'status-out';
+                if (item.status === 'PARTIAL') rowClass = 'status-partial';
+                row.className = rowClass;
+
+                // Photo cell
                 const photoCell = row.insertCell();
                 if (item.photo) {
                     photoCell.innerHTML = `<img src="/uploads/photos/${item.photo}" class="equipment-photo" onclick="openPhotoModal('${item.id}')" alt="${item.name}">`;
@@ -1106,10 +1192,25 @@
                     photoCell.innerHTML = `<div class="no-photo" onclick="openPhotoModal('${item.id}', true)">📷</div>`;
                 }
 
+                // Calculate quantities
+                const total = item.quantity || 1;
+                const out = item.quantity_out || 0;
+                const available = total - out;
+
+                // Quantity badge
+                let qtyBadgeClass = 'full';
+                if (out === total) qtyBadgeClass = 'out';
+                else if (out > 0) qtyBadgeClass = 'partial';
+
+                const quantityDisplay = total > 1
+                    ? `<span class="quantity-badge ${qtyBadgeClass}">${available}/${total} available</span>`
+                    : `<span class="quantity-badge full">1</span>`;
+
                 // Rest of the row
                 row.innerHTML += `
             <td>${item.id}</td>
             <td>${item.name}</td>
+            <td>${quantityDisplay}</td>
             <td><strong>${item.status}</strong></td>
             <td>${item.location}</td>
             <td>${item.last_updated}</td>
