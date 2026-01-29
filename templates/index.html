@@ -617,11 +617,61 @@
             flex: 1;
             max-width: 300px;
         }
+
+        #single-qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .single-qr-item {
+            padding: 20px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .single-qr-item canvas {
+            display: block;
+        }
+
+        .single-qr-label {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #single-qr-container,
+            #single-qr-container * {
+                visibility: visible;
+            }
+
+            #single-qr-container {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
     </style>
 </head>
 
 <body>
-    <h1>Equipment Tracker with Events</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Equipment Tracker with Events</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span id="user-info" style="color: #666;">Loading...</span>
+            <button onclick="handleLogout()" style="background: #dc3545;">Logout</button>
+        </div>
+    </div>
 
     <!-- NAVIGATION TABS -->
     <div class="nav-tabs">
@@ -629,6 +679,7 @@
         <div class="nav-tab" onclick="showTab('events', this)">Events</div>
         <div class="nav-tab" onclick="showTab('templates', this)">Templates</div>
         <div class="nav-tab" onclick="showTab('categories', this)">Categories</div>
+        <div class="nav-tab" onclick="showTab('users', this)">Users</div>
         <div class="nav-tab" onclick="showTab('scan', this)">Scanner</div>
     </div>
 
@@ -807,6 +858,55 @@
         </div>
     </div>
 
+    <!-- USERS TAB -->
+    <div id="users-tab" class="tab-content">
+        <h1>User Management</h1>
+
+        <!-- CHANGE PASSWORD -->
+        <div class="section">
+            <h3>Change Your Password</h3>
+            <div style="max-width: 500px;">
+                <input type="password" id="new-password" placeholder="New Password (min 4 characters)">
+                <input type="password" id="confirm-password" placeholder="Confirm New Password">
+                <button onclick="changePassword()">Change Password</button>
+            </div>
+        </div>
+
+        <!-- ADD NEW USER -->
+        <div class="section">
+            <h3>Add New User</h3>
+            <div style="max-width: 600px;">
+                <input type="text" id="new-user-username" placeholder="Username" style="width: 200px;">
+                <input type="password" id="new-user-password" placeholder="Password (min 4 characters)"
+                    style="width: 200px;">
+                <input type="text" id="new-user-fullname" placeholder="Full Name (optional)" style="width: 250px;">
+                <select id="new-user-role" style="width: 150px;">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button onclick="createUser()">Add User</button>
+            </div>
+        </div>
+
+        <!-- USERS LIST -->
+        <div class="section">
+            <h3>All Users</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="scan-tab" class="tab-content">
         <!-- SCAN SECTION -->
         <div class="section">
@@ -893,6 +993,31 @@
                         style="background: #6c757d;">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- QR CODE MODAL -->
+    <div id="qrcode-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <span class="close" onclick="closeQRCodeModal()">&times;</span>
+            <h2 id="qrcode-equipment-name">QR Code</h2>
+
+            <div id="single-qr-container" style="margin: 30px 0;">
+                <!-- QR code will be inserted here -->
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="printSingleQRCode()" style="background: #007bff;">
+                    🖨️ Print This QR Code
+                </button>
+                <button onclick="closeQRCodeModal()" style="background: #6c757d;">
+                    Close
+                </button>
+            </div>
+
+            <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                Scan this code to check equipment in/out
+            </p>
         </div>
     </div>
 
@@ -1045,6 +1170,8 @@
         let events = [];
         let templates = [];
         let categories = [];
+        let users = [];
+        let currentUser = null;
         let currentEvent = null;
         let currentEventId = null;
         let currentTemplateId = null;
@@ -1054,11 +1181,28 @@
 
         // Initialize
         window.onload = function () {
+            loadCurrentUser();
             loadEquipment();
             loadEvents();
             loadTemplates();
             loadCategories();
+            loadUsers();
         };
+
+        // Global error handler for API authentication
+        const originalFetch = window.fetch;
+        window.fetch = async function (...args) {
+            const response = await originalFetch(...args);
+
+            // If unauthorized, redirect to login
+            if (response.status === 401 && !args[0].includes('/api/login') && !args[0].includes('/api/current-user')) {
+                window.location.href = '/login';
+                throw new Error('Session expired');
+            }
+
+            return response;
+        };
+
 
         // Tab management
 
@@ -1285,6 +1429,248 @@
                 showMessage('Error: ' + error.message, 'error');
             }
         }
+
+
+        // ==================== USER MANAGEMENT FUNCTIONS ====================
+
+        async function loadCurrentUser() {
+            try {
+                const response = await fetch('/api/current-user');
+                if (response.ok) {
+                    currentUser = await response.json();
+                    document.getElementById('user-info').textContent =
+                        `👤 ${currentUser.full_name || currentUser.username} (${currentUser.role})`;
+                } else {
+                    // Not logged in, redirect to login
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error loading user:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        async function handleLogout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                showMessage('Logout error: ' + error.message, 'error');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                if (response.ok) {
+                    users = await response.json();
+                    displayUsers();
+                } else {
+                    showMessage('Error loading users', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        function displayUsers() {
+            const tbody = document.getElementById('users-list');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const row = tbody.insertRow();
+
+                const isCurrentUser = currentUser && user.id === currentUser.user_id;
+                const roleClass = user.role === 'admin' ? 'status-out' : 'status-in';
+
+                row.innerHTML = `
+            <td><strong>${user.username}</strong>${isCurrentUser ? ' <span style="color: #28a745;">(You)</span>' : ''}</td>
+            <td>${user.full_name || '-'}</td>
+            <td><span class="${roleClass}" style="padding: 3px 10px; border-radius: 3px; font-size: 12px;">${user.role.toUpperCase()}</span></td>
+            <td>${user.created_at || '-'}</td>
+            <td>${user.last_login || 'Never'}</td>
+            <td>
+                <button onclick="editUser(${user.id})" style="background: #28a745;">Edit</button>
+                ${!isCurrentUser ? `<button onclick="deleteUser(${user.id})" class="danger">Delete</button>` : ''}
+            </td>
+        `;
+            });
+        }
+
+        async function createUser() {
+            const username = document.getElementById('new-user-username').value.trim();
+            const password = document.getElementById('new-user-password').value;
+            const fullName = document.getElementById('new-user-fullname').value.trim();
+            const role = document.getElementById('new-user-role').value;
+
+            if (!username) {
+                alert('Username is required');
+                return;
+            }
+
+            if (!password || password.length < 4) {
+                alert('Password must be at least 4 characters');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        full_name: fullName,
+                        role: role
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('User created successfully!', 'success');
+                    document.getElementById('new-user-username').value = '';
+                    document.getElementById('new-user-password').value = '';
+                    document.getElementById('new-user-fullname').value = '';
+                    document.getElementById('new-user-role').value = 'user';
+                    loadUsers();
+                } else {
+                    showMessage(result.error || 'Error creating user', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function editUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            const newFullName = prompt('Full Name:', user.full_name || '');
+            if (newFullName === null) return; // Cancelled
+
+            const newRole = prompt('Role (admin or user):', user.role);
+            if (newRole === null) return;
+
+            if (newRole !== 'admin' && newRole !== 'user') {
+                alert('Role must be "admin" or "user"');
+                return;
+            }
+
+            const changePassword = confirm('Do you want to change the password?');
+            let newPassword = null;
+
+            if (changePassword) {
+                newPassword = prompt('New password (min 4 characters):');
+                if (newPassword === null) return;
+
+                if (newPassword && newPassword.length < 4) {
+                    alert('Password must be at least 4 characters');
+                    return;
+                }
+            }
+
+            try {
+                const body = {
+                    full_name: newFullName,
+                    role: newRole
+                };
+
+                if (newPassword) {
+                    body.password = newPassword;
+                }
+
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('User updated successfully!', 'success');
+                    loadUsers();
+                } else {
+                    showMessage(result.error || 'Error updating user', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            if (!confirm(`Delete user "${user.username}"? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('User deleted successfully', 'success');
+                    loadUsers();
+                } else {
+                    showMessage(result.error || 'Error deleting user', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function changePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!newPassword || newPassword.length < 4) {
+                alert('Password must be at least 4 characters');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUser.user_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('Password changed successfully!', 'success');
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                } else {
+                    showMessage(result.error || 'Error changing password', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Handle 401 (unauthorized) responses globally
+        window.addEventListener('unhandledrejection', event => {
+            if (event.reason && event.reason.status === 401) {
+                window.location.href = '/login';
+            }
+        });
+
 
         // ==================== EQUIPMENT FUNCTIONS ====================
 
@@ -1587,6 +1973,7 @@
             <td>${item.last_updated}</td>
             <td>
                 <button onclick="openEditEquipmentModal('${item.id}')" style="background: #28a745;">Edit</button>
+                <button onclick="showEquipmentQRCode('${item.id}', '${item.name}')" style="background: #6f42c1;">QR Code</button>
                 <button onclick="viewEquipmentHistory('${item.id}', '${item.name}')" class="secondary">View History</button>
                 <button onclick="deleteEquipment('${item.id}')" class="danger">Delete</button>
             </td>
@@ -1806,6 +2193,53 @@
                 showMessage('Barcodes generated! Ready to print.', 'success');
             }, 100);
         }
+
+        // ==================== INDIVIDUAL QR CODE FUNCTIONS ====================
+
+        function showEquipmentQRCode(equipmentId, equipmentName) {
+            const item = equipment.find(eq => eq.id === equipmentId);
+            if (!item) {
+                showMessage('Equipment not found', 'error');
+                return;
+            }
+
+            // Set modal title
+            document.getElementById('qrcode-equipment-name').textContent = `QR Code - ${equipmentName}`;
+
+            // Generate QR code
+            const container = document.getElementById('single-qr-container');
+            container.innerHTML = `
+                <div class="single-qr-item">
+                    ${item.photo ? `<img src="/uploads/photos/${item.photo}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 15px;">` : ''}
+                    <div class="single-qr-label">${item.name}</div>
+                    <div style="margin: 20px 0;">
+                        <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(item.id)}&code=Code128&translate-esc=on&eclevel=L" 
+                             alt="Barcode" 
+                             style="max-width: 100%; height: auto;">
+                    </div>
+                    <p style="font-size: 14px; margin-top: 10px;"><strong>ID: ${item.id}</strong></p>
+                </div>
+            `;
+
+            // Show modal
+            document.getElementById('qrcode-modal').style.display = 'block';
+        }
+
+        function closeQRCodeModal() {
+            document.getElementById('qrcode-modal').style.display = 'none';
+        }
+
+        function printSingleQRCode() {
+            window.print();
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function (event) {
+            const qrModal = document.getElementById('qrcode-modal');
+            if (event.target == qrModal) {
+                closeQRCodeModal();
+            }
+        });
 
         // ==================== EVENTS FUNCTIONS ====================
 
