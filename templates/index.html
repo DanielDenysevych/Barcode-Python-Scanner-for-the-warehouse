@@ -908,9 +908,55 @@
     </div>
 
     <div id="scan-tab" class="tab-content">
-        <!-- SCAN SECTION -->
+        <h1>Scanner</h1>
+
+        <!-- STEP 1: SELECT EVENT -->
         <div class="section">
-            <h2>Scan Equipment</h2>
+            <h2>Step 1: Select Event</h2>
+            <p style="color: #666; margin-bottom: 15px;">Choose which event you're working with, or check equipment
+                in/out manually</p>
+
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <select id="scan-event-select" style="width: 400px; font-size: 16px; padding: 12px;">
+                    <option value="">📦 No Event (Manual Check In/Out)</option>
+                </select>
+                <button onclick="quickCreateEvent()" style="background: #28a745;">
+                    ➕ Create New Event
+                </button>
+                <button onclick="refreshEventsList()" style="background: #17a2b8;">
+                    🔄 Refresh Events
+                </button>
+            </div>
+
+            <!-- Active Event Display -->
+            <div id="active-event-display"
+                style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-left: 4px solid #007bff; border-radius: 5px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="font-size: 18px; color: #0056b3;">📍 Active Event:</strong>
+                        <span id="active-event-name" style="font-size: 18px; margin-left: 10px;"></span>
+                        <div style="margin-top: 5px; color: #666; font-size: 14px;">
+                            <span id="active-event-details"></span>
+                        </div>
+                    </div>
+                    <button onclick="clearActiveEvent()" style="background: #6c757d; font-size: 14px;">
+                        Clear Event
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Mode Display -->
+            <div id="manual-mode-display"
+                style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                <strong style="color: #856404;">📦 Manual Mode:</strong>
+                <span style="color: #856404; margin-left: 10px;">Scanning without an event. Equipment will check in/out
+                    manually.</span>
+            </div>
+        </div>
+
+        <!-- STEP 2: SCAN EQUIPMENT -->
+        <div class="section">
+            <h2>Step 2: Scan Equipment</h2>
 
             <div class="form-group">
                 <label>Your Name*</label>
@@ -920,34 +966,84 @@
                 </small>
             </div>
 
-            <div class="form-group">
-                <label>Select Event (Optional):</label>
-                <select id="scan-event-select" style="width: 400px;">
-                    <option value="">No Event (Manual Check In/Out)</option>
-                </select>
-            </div>
-
             <!-- Manual/Barcode Scanner Input -->
-            <div>
-                <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus
-                    style="width: 400px;">
-                <button onclick="processManualScan()">Submit</button>
+            <div style="margin-top: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-weight: bold;">Scan Equipment Barcode:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="manual-code" placeholder="Scan or type equipment code here" autofocus
+                        style="width: 400px; font-size: 18px; padding: 12px;">
+                    <button onclick="processManualScan()" style="font-size: 16px; padding: 12px 24px;">
+                        ✓ Submit
+                    </button>
+                </div>
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Click in the box above, then scan with your barcode scanner, or use camera below
+                </small>
             </div>
 
             <!-- Camera Scanner -->
-            <div style="margin-top: 20px;">
-                <button onclick="startCameraScanner()">Use Camera Scanner</button>
-                <button onclick="stopCameraScanner()" class="hidden" id="stop-camera-btn">Stop Camera</button>
+            <div style="margin-top: 30px;">
+                <button onclick="startCameraScanner()" style="font-size: 16px; padding: 12px 24px;">
+                    📷 Use Camera Scanner
+                </button>
+                <button onclick="stopCameraScanner()" class="hidden" id="stop-camera-btn"
+                    style="background: #dc3545; font-size: 16px; padding: 12px 24px;">
+                    ⛔ Stop Camera
+                </button>
             </div>
-            <div id="scanner-container" class="hidden"></div>
+            <div id="scanner-container" class="hidden" style="margin-top: 20px;"></div>
 
-            <div id="scan-result" class="hidden"></div>
+            <div id="scan-result" class="hidden" style="margin-top: 20px;"></div>
         </div>
 
-        <!-- RECENT ACTIVITY -->
+        <!-- STEP 3: RECENT ACTIVITY -->
         <div class="section">
             <h2>Recent Scan Activity</h2>
             <div id="recent-activity"></div>
+        </div>
+    </div>
+
+    <!-- QUICK CREATE EVENT MODAL -->
+    <div id="quick-event-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close" onclick="closeQuickEventModal()">&times;</span>
+            <h2>Quick Create Event</h2>
+
+            <form id="quick-event-form" onsubmit="submitQuickEvent(event); return false;">
+                <div class="form-group">
+                    <label>Event Name*</label>
+                    <input type="text" id="quick-event-name" required placeholder="e.g., Wedding - Smith Family">
+                </div>
+
+                <div class="form-group">
+                    <label>Event Type*</label>
+                    <select id="quick-event-type" required>
+                        <option value="">Select Type</option>
+                        <option value="Corporate Conference">Corporate Conference</option>
+                        <option value="Wedding">Wedding</option>
+                        <option value="Concert">Concert</option>
+                        <option value="Sports Event">Sports Event</option>
+                        <option value="Trade Show">Trade Show</option>
+                        <option value="Festival">Festival</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="quick-event-date">
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="quick-event-location" placeholder="Event venue or address">
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" style="background: #28a745;">Create & Select Event</button>
+                    <button type="button" onclick="closeQuickEventModal()" style="background: #6c757d;">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1763,6 +1859,110 @@
             document.getElementById('stat-out').textContent = out;
         }
 
+        // ==================== SCANNER WORKFLOW FUNCTIONS ====================
+
+        // Update event selector display
+        function updateActiveEventDisplay() {
+            const eventSelect = document.getElementById('scan-event-select');
+            const selectedEventId = eventSelect.value;
+            const activeDisplay = document.getElementById('active-event-display');
+            const manualDisplay = document.getElementById('manual-mode-display');
+
+            if (selectedEventId) {
+                // Event selected - show active event display
+                const event = events.find(e => e.id === selectedEventId);
+                if (event) {
+                    document.getElementById('active-event-name').textContent = event.name;
+                    document.getElementById('active-event-details').textContent =
+                        `${event.type} • ${event.date || 'No date'} • ${event.location || 'No location'}`;
+                    activeDisplay.style.display = 'block';
+                    manualDisplay.style.display = 'none';
+                }
+            } else {
+                // Manual mode - show manual display
+                activeDisplay.style.display = 'none';
+                manualDisplay.style.display = 'block';
+            }
+        }
+
+        // Event selector change handler
+        document.addEventListener('DOMContentLoaded', function () {
+            const eventSelect = document.getElementById('scan-event-select');
+            if (eventSelect) {
+                eventSelect.addEventListener('change', updateActiveEventDisplay);
+            }
+        });
+
+        function clearActiveEvent() {
+            document.getElementById('scan-event-select').value = '';
+            updateActiveEventDisplay();
+            showMessage('Switched to manual mode', 'success');
+        }
+
+        function refreshEventsList() {
+            loadEvents();
+            showMessage('Events list refreshed', 'success');
+        }
+
+        // Quick create event modal
+        function quickCreateEvent() {
+            document.getElementById('quick-event-modal').style.display = 'block';
+            document.getElementById('quick-event-name').focus();
+        }
+
+        function closeQuickEventModal() {
+            document.getElementById('quick-event-modal').style.display = 'none';
+            document.getElementById('quick-event-form').reset();
+        }
+
+        async function submitQuickEvent(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('quick-event-name').value.trim();
+            const type = document.getElementById('quick-event-type').value;
+            const date = document.getElementById('quick-event-date').value;
+            const location = document.getElementById('quick-event-location').value.trim();
+
+            if (!name || !type) {
+                alert('Event name and type are required');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        type: type,
+                        date: date,
+                        location: location,
+                        status: 'upcoming'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('Event created successfully!', 'success');
+                    closeQuickEventModal();
+
+                    // Reload events
+                    await loadEvents();
+
+                    // Auto-select the new event in the scanner
+                    document.getElementById('scan-event-select').value = result.id;
+                    updateActiveEventDisplay();
+
+                    showMessage(`Now scanning for event: ${name}`, 'success');
+                } else {
+                    showMessage(result.error || 'Error creating event', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
         // Manual scan
         function processManualScan() {
             const code = document.getElementById('manual-code').value.trim();
@@ -1770,6 +1970,54 @@
                 processCode(code);
                 document.getElementById('manual-code').value = '';
             }
+        }
+
+        // Helper function to select event during scan
+        async function selectEventForScan(equipmentName) {
+            // Get active events (Planning or Active status)
+            const activeEvents = events.filter(e => e.status === 'PLANNING' || e.status === 'ACTIVE' || e.status === 'upcoming');
+
+            if (activeEvents.length === 0) {
+                // No events available, ask for manual location
+                const manualLocation = prompt(`No active events found.\n\nWhere is "${equipmentName}" going?`, 'Event Location');
+                return { eventId: null, location: manualLocation };
+            }
+
+            // Build options for user to choose
+            let message = `Where is "${equipmentName}" going?\n\n`;
+            message += '0: Manual location (no event)\n';
+            activeEvents.forEach((event, index) => {
+                message += `${index + 1}: ${event.name} - ${event.date || 'No date'}\n`;
+            });
+            message += '\nEnter number:';
+
+            const choice = prompt(message, '0');
+
+            if (choice === null) {
+                // User cancelled
+                return null;
+            }
+
+            const choiceNum = parseInt(choice);
+
+            if (choiceNum === 0 || isNaN(choiceNum)) {
+                // Manual location
+                const manualLocation = prompt(`Where is "${equipmentName}" going?`, 'Event Location');
+                return { eventId: null, location: manualLocation };
+            }
+
+            if (choiceNum > 0 && choiceNum <= activeEvents.length) {
+                // Event selected
+                const selectedEvent = activeEvents[choiceNum - 1];
+                return {
+                    eventId: selectedEvent.id,
+                    location: selectedEvent.location || selectedEvent.name
+                };
+            }
+
+            // Invalid choice
+            alert('Invalid selection');
+            return null;
         }
 
         // Camera scanner
@@ -1811,7 +2059,7 @@
 
             let location = '';
             let quantity = 1;
-            const eventId = document.getElementById('scan-event-select')?.value || '';
+            let eventId = document.getElementById('scan-event-select')?.value || '';
 
             // Find the equipment
             const item = equipment.find(eq => eq.id === code);
@@ -1825,9 +2073,28 @@
             const currentOut = item.quantity_out || 0;
             const available = total - currentOut;
 
+            let checkingOut = undefined; // Will be set based on user choice or status
+
             // If multiple quantity items, ask how many
             if (total > 1) {
-                if (item.status === 'IN' || item.status === 'PARTIAL') {
+
+                if (item.status === 'IN') {
+                    // All items in warehouse, must be checking OUT
+                    checkingOut = true;
+                } else if (item.status === 'OUT') {
+                    // All items out, must be checking IN
+                    checkingOut = false;
+                } else if (item.status === 'PARTIAL') {
+                    // Some in, some out - ask user what they want to do
+                    const action = confirm(
+                        `${item.name}: ${available} in warehouse, ${currentOut} checked out.\n\n` +
+                        `Click OK to CHECK OUT more items.\n` +
+                        `Click CANCEL to CHECK IN returning items.`
+                    );
+                    checkingOut = action; // true = check out, false = check in
+                }
+
+                if (checkingOut) {
                     // Checking out
                     quantity = prompt(`How many ${item.name} to check out? (Available: ${available})`, '1');
                     if (quantity === null) return; // Cancelled
@@ -1838,9 +2105,16 @@
                         return;
                     }
 
+                    // If no event pre-selected, let user choose event
                     if (!eventId) {
-                        location = prompt('Where is this equipment going?', 'Event Location');
-                        if (location === null) return;
+                        const selection = await selectEventForScan(item.name);
+                        if (selection === null) return; // Cancelled
+                        eventId = selection.eventId || '';
+                        location = selection.location || 'Unknown';
+                    } else {
+                        // Event was pre-selected, use its location
+                        const event = events.find(e => e.id === eventId);
+                        location = event ? (event.location || event.name) : 'Event';
                     }
                 } else {
                     // Checking in
@@ -1854,12 +2128,32 @@
                 }
             } else {
                 // Single item - original behavior
-                if (item.status === 'IN' && !eventId) {
-                    location = prompt('Where is this equipment going?', 'Event Location');
-                    if (location === null) return;
-                } else if (eventId) {
-                    const event = events.find(e => e.id === eventId);
-                    location = event ? event.location : 'Event';
+                if (item.status === 'IN') {
+                    checkingOut = true;
+                    if (!eventId) {
+                        const selection = await selectEventForScan(item.name);
+                        if (selection === null) return; // Cancelled
+                        eventId = selection.eventId || '';
+                        location = selection.location || 'Unknown';
+                    } else {
+                        // Event was pre-selected, use its location
+                        const event = events.find(e => e.id === eventId);
+                        location = event ? (event.location || event.name) : 'Event';
+                    }
+                } else if (item.status === 'OUT' || item.status === 'PARTIAL') {
+                    checkingOut = false;
+                }
+            }
+
+            // Determine the action to send to backend
+            let explicitAction = 'CHECK_OUT';  // default
+            if (checkingOut !== undefined) {
+                // For multi-quantity items where we asked the user
+                explicitAction = checkingOut ? 'CHECK_OUT' : 'CHECK_IN';
+            } else {
+                // For single items
+                if (item.status === 'OUT' || (item.status === 'PARTIAL' && currentOut > 0 && !checkingOut)) {
+                    explicitAction = 'CHECK_IN';
                 }
             }
 
@@ -1872,7 +2166,8 @@
                         location: location,
                         event_id: eventId,
                         scanned_by: userName,
-                        quantity: quantity
+                        quantity: quantity,
+                        action: explicitAction
                     })
                 });
 
@@ -2248,6 +2543,7 @@
                 const response = await fetch('/api/events');
                 events = await response.json();
                 displayEvents();
+                loadEventsForScan(); // Also update scanner dropdown
             } catch (error) {
                 showMessage('Error loading events: ' + error.message, 'error');
             }

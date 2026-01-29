@@ -650,6 +650,7 @@ def scan_equipment():
     event_id = data.get('event_id', '')
     scanned_by = data.get('scanned_by', 'Unknown User')
     quantity = data.get('quantity', 1)  # How many to check in/out
+    explicit_action = data.get('action', '')  # Explicit action from frontend
 
     if not code:
         return jsonify({'error': 'Code is required'}), 400
@@ -677,8 +678,30 @@ def scan_equipment():
     current_out = equipment['quantity_out']
     available = total_qty - current_out
 
-    # Determine action based on current status
-    if equipment['status'] == 'IN' or (equipment['status'] == 'PARTIAL' and available > 0):
+    # Use explicit action from frontend if provided, otherwise determine from status
+    if explicit_action == 'CHECK_OUT':
+        is_checking_out = True
+        action = 'CHECK_OUT'
+    elif explicit_action == 'CHECK_IN':
+        is_checking_out = False
+        action = 'CHECK_IN'
+    else:
+        # Fallback: determine based on status (for backward compatibility)
+        if equipment['status'] == 'IN':
+            is_checking_out = True
+            action = 'CHECK_OUT'
+        elif equipment['status'] == 'OUT':
+            is_checking_out = False
+            action = 'CHECK_IN'
+        else:  # PARTIAL - default to check out if available, check in if nothing available
+            if available > 0:
+                is_checking_out = True
+                action = 'CHECK_OUT'
+            else:
+                is_checking_out = False
+                action = 'CHECK_IN'
+
+    if is_checking_out:
         # Checking OUT
         if quantity > available:
             conn.close()
@@ -694,14 +717,27 @@ def scan_equipment():
             message = f"{equipment['name']} - {quantity} checked OUT (Total out: {new_quantity_out}/{total_qty}) to: {location if location else 'Unknown'}"
 
         new_location = location if location else 'Unknown'
-        action = 'CHECK_OUT'
 
         # If event_id provided, mark as checked out in event checklist
         if event_id:
-            conn.execute(
-                'UPDATE event_equipment SET checked_out = 1 WHERE event_id = ? AND equipment_id = ?',
+            # Check if equipment is already in event checklist
+            existing = conn.execute(
+                'SELECT id FROM event_equipment WHERE event_id = ? AND equipment_id = ?',
                 (event_id, code)
-            )
+            ).fetchone()
+            
+            if existing:
+                # Already in checklist, just mark as checked out
+                conn.execute(
+                    'UPDATE event_equipment SET checked_out = 1 WHERE event_id = ? AND equipment_id = ?',
+                    (event_id, code)
+                )
+            else:
+                # Not in checklist yet, add it and mark as checked out
+                conn.execute(
+                    'INSERT INTO event_equipment (event_id, equipment_id, checked_out, checked_in) VALUES (?, ?, 1, 0)',
+                    (event_id, code)
+                )
 
     else:
         # Checking IN
