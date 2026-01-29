@@ -33,6 +33,16 @@ def init_db():
     """Initialize the database with equipment and events tables"""
     conn = get_db()
 
+    # Create categories table first
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            color TEXT DEFAULT '#333333'
+        )
+    ''')
+
     # Check if photo column exists in equipment table
     cursor = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'")
@@ -56,6 +66,10 @@ def init_db():
             # Track how many are currently checked out
             conn.execute(
                 'ALTER TABLE equipment ADD COLUMN quantity_out INTEGER DEFAULT 0')
+
+        if 'category_id' not in columns:
+            # Add category_id column
+            conn.execute('ALTER TABLE equipment ADD COLUMN category_id TEXT')
     else:
         # Create equipment table with photo field
         conn.execute('''
@@ -67,7 +81,9 @@ def init_db():
                 last_updated TEXT,
                 photo TEXT,
                 quantity INTEGER DEFAULT 1,
-                quantity_out INTEGER DEFAULT 0
+                quantity_out INTEGER DEFAULT 0,
+                category_id TEXT,
+                FOREIGN KEY (category_id) REFERENCES categories(id)
             )
         ''')
 
@@ -168,25 +184,32 @@ def uploaded_file(filename):
 
 @app.route('/api/equipment', methods=['GET'])
 def get_equipment():
-    """Get all equipment"""
+    """Get all equipment with category information"""
     conn = get_db()
-    equipment = conn.execute(
-        'SELECT * FROM equipment ORDER BY name').fetchall()
+    equipment = conn.execute('''
+        SELECT e.*, c.name as category_name, c.color as category_color
+        FROM equipment e
+        LEFT JOIN categories c ON e.category_id = c.id
+        ORDER BY e.name
+    ''').fetchall()
     conn.close()
     return jsonify([dict(row) for row in equipment])
 
 
+
 @app.route('/api/equipment', methods=['POST'])
 def add_equipment():
-    """Add new equipment with optional photo"""
+    """Add new equipment with optional photo and category"""
     # Handle both form data (with photo) and JSON (without photo)
     if request.content_type and 'multipart/form-data' in request.content_type:
         name = request.form.get('name')
         quantity = request.form.get('quantity', 1, type=int)
+        category_id = request.form.get('category_id')
     else:
         data = request.json
         name = data.get('name') if data else None
         quantity = data.get('quantity', 1) if data else 1
+        category_id = data.get('category_id') if data else None
 
     if not name:
         return jsonify({'error': 'Name is required'}), 400
@@ -210,9 +233,9 @@ def add_equipment():
 
     conn = get_db()
     conn.execute(
-        'INSERT INTO equipment (id, name, status, location, last_updated, photo, quantity, quantity_out) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO equipment (id, name, status, location, last_updated, photo, quantity, quantity_out, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         (equipment_id, name, 'IN', 'Warehouse', datetime.now().strftime(
-            '%Y-%m-%d %H:%M:%S'), photo_path, quantity, 0)
+            '%Y-%m-%d %H:%M:%S'), photo_path, quantity, 0, category_id)
     )
     conn.commit()
     conn.close()
@@ -222,6 +245,7 @@ def add_equipment():
         'name': name,
         'photo': photo_path,
         'quantity': quantity,
+        'category_id': category_id,
         'message': 'Equipment added successfully'
     })
 
@@ -301,6 +325,57 @@ def delete_equipment_photo(equipment_id):
     conn.close()
 
     return jsonify({'message': 'Photo deleted successfully'})
+
+
+
+
+@app.route('/api/equipment/<equipment_id>', methods=['PUT'])
+def update_equipment(equipment_id):
+    """Update equipment details (name, quantity, category)"""
+    data = request.json
+    conn = get_db()
+
+    equipment = conn.execute(
+        'SELECT * FROM equipment WHERE id = ?', (equipment_id,)).fetchone()
+
+    if not equipment:
+        conn.close()
+        return jsonify({'error': 'Equipment not found'}), 404
+
+    # Prepare update fields
+    updates = []
+    values = []
+
+    if 'name' in data:
+        updates.append('name = ?')
+        values.append(data['name'])
+
+    if 'quantity' in data:
+        quantity = max(1, int(data['quantity']))
+        updates.append('quantity = ?')
+        values.append(quantity)
+
+    if 'category_id' in data:
+        updates.append('category_id = ?')
+        values.append(data['category_id'])
+
+    if not updates:
+        conn.close()
+        return jsonify({'error': 'No fields to update'}), 400
+
+    # Add last_updated
+    updates.append('last_updated = ?')
+    values.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    # Add equipment_id for WHERE clause
+    values.append(equipment_id)
+
+    query = f"UPDATE equipment SET {', '.join(updates)} WHERE id = ?"
+    conn.execute(query, values)
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Equipment updated successfully'})
 
 
 @app.route('/api/equipment/<equipment_id>', methods=['DELETE'])
@@ -484,6 +559,109 @@ def get_all_history():
 
     conn.close()
     return jsonify([dict(row) for row in history])
+
+
+# ==================== CATEGORY ROUTES ====================
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    """Get all categories"""
+    conn = get_db()
+    categories = conn.execute(
+        'SELECT * FROM categories ORDER BY name').fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in categories])
+
+
+@app.route('/api/categories', methods=['POST'])
+def create_category():
+    """Create new category"""
+    data = request.json
+    name = data.get('name')
+    description = data.get('description', '')
+    color = data.get('color', '#333333')
+
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+    category_id = 'CAT' + str(int(datetime.now().timestamp() * 1000))
+
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT INTO categories (id, name, description, color) VALUES (?, ?, ?, ?)',
+            (category_id, name, description, color)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'id': category_id,
+            'name': name,
+            'description': description,
+            'color': color,
+            'message': 'Category created successfully'
+        })
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'error': 'Category name already exists'}), 400
+
+
+@app.route('/api/categories/<category_id>', methods=['PUT'])
+def update_category(category_id):
+    """Update category"""
+    data = request.json
+    conn = get_db()
+
+    category = conn.execute(
+        'SELECT * FROM categories WHERE id = ?', (category_id,)).fetchone()
+
+    if not category:
+        conn.close()
+        return jsonify({'error': 'Category not found'}), 404
+
+    name = data.get('name', category['name'])
+    description = data.get('description', category['description'])
+    color = data.get('color', category['color'])
+
+    try:
+        conn.execute(
+            'UPDATE categories SET name = ?, description = ?, color = ? WHERE id = ?',
+            (name, description, color, category_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({'message': 'Category updated successfully'})
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'error': 'Category name already exists'}), 400
+
+
+@app.route('/api/categories/<category_id>', methods=['DELETE'])
+def delete_category(category_id):
+    """Delete category (sets equipment category_id to NULL)"""
+    conn = get_db()
+
+    # Check if category exists
+    category = conn.execute(
+        'SELECT * FROM categories WHERE id = ?', (category_id,)).fetchone()
+
+    if not category:
+        conn.close()
+        return jsonify({'error': 'Category not found'}), 404
+
+    # Remove category from equipment (set to NULL)
+    conn.execute(
+        'UPDATE equipment SET category_id = NULL WHERE category_id = ?',
+        (category_id,)
+    )
+
+    # Delete category
+    conn.execute('DELETE FROM categories WHERE id = ?', (category_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Category deleted successfully'})
+
 
 # ==================== EVENTS ROUTES ====================
 

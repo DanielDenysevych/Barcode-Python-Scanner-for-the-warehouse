@@ -557,6 +557,66 @@
             background: #fff3cd;
             color: #856404;
         }
+
+        .category-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-info {
+            flex: 1;
+        }
+
+        .category-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .category-description {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .category-color-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .filter-section {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-section select {
+            flex: 1;
+            max-width: 300px;
+        }
     </style>
 </head>
 
@@ -568,6 +628,7 @@
         <div class="nav-tab active" onclick="showTab('equipment', this)">Equipment</div>
         <div class="nav-tab" onclick="showTab('events', this)">Events</div>
         <div class="nav-tab" onclick="showTab('templates', this)">Templates</div>
+        <div class="nav-tab" onclick="showTab('categories', this)">Categories</div>
         <div class="nav-tab" onclick="showTab('scan', this)">Scanner</div>
     </div>
 
@@ -592,7 +653,7 @@
         <!-- ADD NEW EQUIPMENT -->
         <div class="section">
             <h2>Add New Equipment</h2>
-            <form id="add-equipment-form" onsubmit="addEquipment(event); return false;">
+            <form id="add-equipment-form" onsubmit="addEquipmentWithCategory(event); return false;">
                 <div>
                     <input type="text" id="new-equipment-name" placeholder="Equipment name (e.g., XLR Cable)"
                         style="width: 400px;" required>
@@ -602,6 +663,12 @@
                     <input type="number" id="new-equipment-quantity" value="1" min="1" style="width: 100px;"
                         placeholder="1">
                     <small style="color: #666; margin-left: 10px;">How many of this item do you have?</small>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="new-equipment-category">Category:</label>
+                    <select id="new-equipment-category" style="width: 300px;">
+                        <option value="">No Category</option>
+                    </select>
                 </div>
                 <div style="margin-top: 10px;">
                     <div class="file-input-wrapper">
@@ -656,6 +723,9 @@
                     <option value="IN">In Warehouse</option>
                     <option value="OUT">Out at Event</option>
                 </select>
+                <select id="filter-category" onchange="filterEquipment()" style="width: 200px;">
+                    <option value="ALL">All Categories</option>
+                </select>
             </div>
             <table>
                 <thead>
@@ -663,6 +733,7 @@
                         <th>Photo</th>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Category</th>
                         <th>Quantity</th>
                         <th>Status</th>
                         <th>Location</th>
@@ -713,6 +784,29 @@
     </div>
 
     <!-- SCAN TAB -->
+
+    <!-- CATEGORIES TAB -->
+    <div id="categories-tab" class="tab-content">
+        <h1>Manage Categories</h1>
+
+        <!-- ADD NEW CATEGORY -->
+        <div class="section">
+            <h3>Add New Category</h3>
+            <input type="text" id="new-category-name" placeholder="Category Name (e.g., Audio, Video, Lighting)">
+            <input type="text" id="new-category-description" placeholder="Description (optional)">
+            <label>Color: <input type="color" id="new-category-color" value="#333333"></label>
+            <button onclick="addCategory()">Add Category</button>
+        </div>
+
+        <!-- CATEGORIES LIST -->
+        <div class="section">
+            <h3>Existing Categories</h3>
+            <div id="categories-list">
+                <p>Loading categories...</p>
+            </div>
+        </div>
+    </div>
+
     <div id="scan-tab" class="tab-content">
         <!-- SCAN SECTION -->
         <div class="section">
@@ -758,6 +852,50 @@
     </div>
 
     <!-- CREATE/EDIT EVENT MODAL -->
+    <!-- EDIT EQUIPMENT MODAL -->
+    <div id="edit-equipment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditEquipmentModal()">&times;</span>
+            <h2>Edit Equipment</h2>
+
+            <form id="edit-equipment-form" onsubmit="saveEquipmentChanges(event); return false;">
+                <div class="form-group">
+                    <label>Equipment Name*</label>
+                    <input type="text" id="edit-equipment-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="edit-equipment-category">
+                        <option value="">No Category</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantity*</label>
+                    <input type="number" id="edit-equipment-quantity" min="1" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Total number of this item in inventory
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Status</label>
+                    <input type="text" id="edit-equipment-status" disabled style="background: #f0f0f0;">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Status is automatically managed by check-ins/check-outs
+                    </small>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" style="background: #28a745;">Save Changes</button>
+                    <button type="button" onclick="closeEditEquipmentModal()"
+                        style="background: #6c757d;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="event-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeEventModal()">&times;</span>
@@ -906,6 +1044,7 @@
         let equipment = [];
         let events = [];
         let templates = [];
+        let categories = [];
         let currentEvent = null;
         let currentEventId = null;
         let currentTemplateId = null;
@@ -918,9 +1057,235 @@
             loadEquipment();
             loadEvents();
             loadTemplates();
+            loadCategories();
         };
 
         // Tab management
+
+        // ==================== CATEGORY FUNCTIONS ====================
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                categories = await response.json();
+                displayCategories();
+                updateCategoryDropdowns();
+            } catch (error) {
+                showMessage('Error loading categories: ' + error.message, 'error');
+            }
+        }
+
+        function displayCategories() {
+            const container = document.getElementById('categories-list');
+
+            if (categories.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No categories yet. Add one above!</p>';
+                return;
+            }
+
+            let html = '';
+            categories.forEach(cat => {
+                html += `
+            <div class="category-item">
+                <div style="display: flex; align-items: center; flex: 1;">
+                    <div class="category-color-box" style="background-color: ${cat.color};"></div>
+                    <div class="category-info">
+                        <div class="category-name">${cat.name}</div>
+                        ${cat.description ? `<div class="category-description">${cat.description}</div>` : ''}
+                    </div>
+                </div>
+                <div class="category-actions">
+                    <button onclick="editCategory('${cat.id}')">Edit</button>
+                    <button onclick="deleteCategory('${cat.id}')" style="background: #dc3545;">Delete</button>
+                </div>
+            </div>
+        `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('new-category-name').value.trim();
+            const description = document.getElementById('new-category-description').value.trim();
+            const color = document.getElementById('new-category-color').value;
+
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description, color })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('new-category-name').value = '';
+                    document.getElementById('new-category-description').value = '';
+                    document.getElementById('new-category-color').value = '#333333';
+                    loadCategories();
+                } else {
+                    showMessage(result.error || 'Error adding category', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function editCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            const newName = prompt('Category Name:', category.name);
+            if (newName === null) return; // Cancelled
+
+            const newDescription = prompt('Description:', category.description || '');
+            if (newDescription === null) return;
+
+            const newColor = prompt('Color (hex code):', category.color);
+            if (newColor === null) return;
+
+            try {
+                const response = await fetch(`/api/categories/${categoryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: newName.trim(),
+                        description: newDescription.trim(),
+                        color: newColor.trim()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    loadCategories();
+                    loadEquipment(); // Refresh equipment to show updated category names
+                } else {
+                    showMessage(result.error || 'Error updating category', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            if (!confirm(`Delete category "${category.name}"? Equipment with this category will be uncategorized.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    loadCategories();
+                    loadEquipment(); // Refresh equipment list
+                } else {
+                    showMessage(result.error || 'Error deleting category', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        function updateCategoryDropdowns() {
+            // Update add equipment form dropdown
+            const addDropdown = document.getElementById('new-equipment-category');
+            if (addDropdown) {
+                let html = '<option value="">No Category</option>';
+                categories.forEach(cat => {
+                    html += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+                addDropdown.innerHTML = html;
+            }
+
+            // Update edit equipment form dropdown
+            const editDropdown = document.getElementById('edit-equipment-category');
+            if (editDropdown) {
+                let html = '<option value="">No Category</option>';
+                categories.forEach(cat => {
+                    html += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+                editDropdown.innerHTML = html;
+            }
+
+            // Update filter dropdown
+            const filterDropdown = document.getElementById('filter-category');
+            if (filterDropdown) {
+                let html = '<option value="ALL">All Categories</option>';
+                categories.forEach(cat => {
+                    html += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+                filterDropdown.innerHTML = html;
+            }
+        }
+
+        // Update the addEquipment function to include category_id
+        // This replaces the existing addEquipment function
+        async function addEquipmentWithCategory(event) {
+            if (event) event.preventDefault();
+
+            const name = document.getElementById('new-equipment-name').value.trim();
+            const quantity = parseInt(document.getElementById('new-equipment-quantity').value) || 1;
+            const categoryId = document.getElementById('new-equipment-category').value;
+
+            if (!name) {
+                alert('Please enter equipment name');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('quantity', quantity);
+            if (categoryId) {
+                formData.append('category_id', categoryId);
+            }
+
+            const photoFile = document.getElementById('equipment-photo').files[0];
+            if (photoFile) {
+                formData.append('photo', photoFile);
+            }
+
+            try {
+                const response = await fetch('/api/equipment', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('new-equipment-name').value = '';
+                    document.getElementById('new-equipment-quantity').value = '1';
+                    document.getElementById('new-equipment-category').value = '';
+                    document.getElementById('equipment-photo').value = '';
+                    document.getElementById('photo-filename').textContent = '';
+                    document.getElementById('photo-preview-container').classList.add('hidden');
+                    loadEquipment();
+                } else {
+                    showMessage(result.error || 'Error adding equipment', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
         // ==================== EQUIPMENT FUNCTIONS ====================
 
         async function loadEquipment() {
@@ -1163,6 +1528,7 @@
 
             const searchTerm = document.getElementById('search-box').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
+            const categoryFilter = document.getElementById('filter-category')?.value || 'ALL';
 
             if (searchTerm) {
                 filteredEquipment = filteredEquipment.filter(item =>
@@ -1173,6 +1539,10 @@
 
             if (statusFilter !== 'ALL') {
                 filteredEquipment = filteredEquipment.filter(item => item.status === statusFilter);
+
+                if (categoryFilter !== 'ALL') {
+                    filteredEquipment = filteredEquipment.filter(item => item.category_id === categoryFilter);
+                }
             }
 
             filteredEquipment.forEach(item => {
@@ -1210,11 +1580,13 @@
                 row.innerHTML += `
             <td>${item.id}</td>
             <td>${item.name}</td>
+            <td>${item.category_name ? '<span class="category-badge" style="background-color: ' + (item.category_color || '#333') + '; color: white;">' + item.category_name + '</span>' : '<span style="color: #999;">Uncategorized</span>'}</td>
             <td>${quantityDisplay}</td>
             <td><strong>${item.status}</strong></td>
             <td>${item.location}</td>
             <td>${item.last_updated}</td>
             <td>
+                <button onclick="openEditEquipmentModal('${item.id}')" style="background: #28a745;">Edit</button>
                 <button onclick="viewEquipmentHistory('${item.id}', '${item.name}')" class="secondary">View History</button>
                 <button onclick="deleteEquipment('${item.id}')" class="danger">Delete</button>
             </td>
@@ -1244,6 +1616,85 @@
                 }
             } catch (error) {
                 showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Edit equipment functions
+        let currentEditEquipmentId = null;
+
+        function openEditEquipmentModal(equipmentId) {
+            currentEditEquipmentId = equipmentId;
+            const item = equipment.find(eq => eq.id === equipmentId);
+
+            if (!item) {
+                showMessage('Equipment not found', 'error');
+                return;
+            }
+
+            // Populate form fields
+            document.getElementById('edit-equipment-name').value = item.name;
+            document.getElementById('edit-equipment-quantity').value = item.quantity || 1;
+            document.getElementById('edit-equipment-category').value = item.category_id || '';
+            document.getElementById('edit-equipment-status').value = item.status;
+
+            // Show modal
+            document.getElementById('edit-equipment-modal').style.display = 'block';
+        }
+
+        function closeEditEquipmentModal() {
+            document.getElementById('edit-equipment-modal').style.display = 'none';
+            currentEditEquipmentId = null;
+        }
+
+        async function saveEquipmentChanges(event) {
+            if (event) event.preventDefault();
+
+            if (!currentEditEquipmentId) return;
+
+            const name = document.getElementById('edit-equipment-name').value.trim();
+            const quantity = parseInt(document.getElementById('edit-equipment-quantity').value);
+            const category_id = document.getElementById('edit-equipment-category').value;
+
+            if (!name) {
+                alert('Please enter equipment name');
+                return;
+            }
+
+            if (quantity < 1) {
+                alert('Quantity must be at least 1');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/equipment/${currentEditEquipmentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        quantity: quantity,
+                        category_id: category_id || null
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('Equipment updated successfully!', 'success');
+                    closeEditEquipmentModal();
+                    loadEquipment();
+                } else {
+                    showMessage(result.error || 'Error updating equipment', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function (event) {
+            const editModal = document.getElementById('edit-equipment-modal');
+            if (event.target == editModal) {
+                closeEditEquipmentModal();
             }
         }
 
