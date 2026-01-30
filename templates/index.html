@@ -661,6 +661,89 @@
                 transform: translate(-50%, -50%);
             }
         }
+
+        /* Global Quick Scan Bar */
+        .global-scan-bar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .global-scan-bar label {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .global-scan-bar input {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 2px solid white;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .global-scan-bar input:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .global-scan-bar button {
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .global-scan-bar button:hover {
+            background: #ffd700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .scan-status {
+            color: white;
+            font-size: 14px;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .global-scan-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .global-scan-bar input,
+            .global-scan-bar button {
+                width: 100%;
+            }
+
+            .scan-status {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 
@@ -673,13 +756,26 @@
         </div>
     </div>
 
+    <!-- GLOBAL QUICK SCAN BAR -->
+    <div class="global-scan-bar">
+        <label>
+            Quick Scan:
+        </label>
+        <input type="text" id="global-scan-input"
+            placeholder="Scan or type equipment barcode here - works from any tab!" autocomplete="off" />
+        <button onclick="processGlobalScan()">
+            ✓ Scan
+        </button>
+        <span class="scan-status" id="global-scan-status">Ready</span>
+    </div>
+
     <!-- NAVIGATION TABS -->
     <div class="nav-tabs">
         <div class="nav-tab active" onclick="showTab('equipment', this)">Equipment</div>
         <div class="nav-tab" onclick="showTab('events', this)">Events</div>
-        <div class="nav-tab" onclick="showTab('templates', this)">Templates</div>
-        <div class="nav-tab" onclick="showTab('categories', this)">Categories</div>
-        <div class="nav-tab" onclick="showTab('users', this)">Users</div>
+        <div class="nav-tab admin-only" onclick="showTab('templates', this)" style="display: none;">Templates 🔒</div>
+        <div class="nav-tab admin-only" onclick="showTab('categories', this)" style="display: none;">Categories 🔒</div>
+        <div class="nav-tab admin-only" onclick="showTab('users', this)" style="display: none;">Users 🔒</div>
         <div class="nav-tab" onclick="showTab('scan', this)">Scanner</div>
     </div>
 
@@ -1536,6 +1632,20 @@
                     currentUser = await response.json();
                     document.getElementById('user-info').textContent =
                         `👤 ${currentUser.full_name || currentUser.username} (${currentUser.role})`;
+
+                    // Show/hide admin-only tabs based on role
+                    const adminTabs = document.querySelectorAll('.admin-only');
+                    if (currentUser.role === 'admin') {
+                        // Show admin tabs
+                        adminTabs.forEach(tab => {
+                            tab.style.display = '';
+                        });
+                    } else {
+                        // Hide admin tabs for regular users
+                        adminTabs.forEach(tab => {
+                            tab.style.display = 'none';
+                        });
+                    }
                 } else {
                     // Not logged in, redirect to login
                     window.location.href = '/login';
@@ -1962,6 +2072,328 @@
                 showMessage('Error: ' + error.message, 'error');
             }
         }
+
+        // ==================== GLOBAL SCAN FUNCTIONS ====================
+
+        // Process global scan from the sticky scan bar (works from any tab)
+        async function processGlobalScan() {
+            const input = document.getElementById('global-scan-input');
+            const code = input.value.trim();
+            const statusSpan = document.getElementById('global-scan-status');
+
+            if (!code) {
+                alert('Please scan or enter an equipment code');
+                input.focus();
+                return;
+            }
+
+            // Update status
+            statusSpan.textContent = 'Processing...';
+            statusSpan.style.background = 'rgba(255, 165, 0, 0.3)';
+
+            try {
+                // Find the equipment
+                const item = equipment.find(eq => eq.id === code);
+
+                if (!item) {
+                    statusSpan.textContent = 'Not Found';
+                    statusSpan.style.background = 'rgba(255, 0, 0, 0.3)';
+                    alert(`Equipment "${code}" not found in system`);
+                    input.value = '';
+                    input.focus(); // Re-focus for next scan
+                    setTimeout(() => {
+                        statusSpan.textContent = 'Ready';
+                        statusSpan.style.background = 'rgba(255, 255, 255, 0.2)';
+                    }, 2000);
+                    return;
+                }
+
+                // Ask for user name if not already provided
+                let userName = document.getElementById('scanner-user-name')?.value.trim();
+                if (!userName) {
+                    userName = prompt('Your name (for tracking):', '');
+                    if (!userName) {
+                        statusSpan.textContent = 'Cancelled';
+                        statusSpan.style.background = 'rgba(255, 255, 255, 0.2)';
+                        input.value = '';
+                        input.focus(); // Re-focus after cancel
+                        setTimeout(() => {
+                            statusSpan.textContent = 'Ready';
+                        }, 2000);
+                        return;
+                    }
+                    // Save for next time
+                    if (document.getElementById('scanner-user-name')) {
+                        document.getElementById('scanner-user-name').value = userName;
+                    }
+                }
+
+                // Process the scan using the existing processCode function
+                // But we need to temporarily set the user name
+                const originalGetUserName = () => userName;
+
+                // Call processCode directly
+                await processCodeGlobal(code, userName);
+
+                // Clear input and update status
+                input.value = '';
+                input.focus(); // Auto-focus back to scan box
+                statusSpan.textContent = '✓ Success';
+                statusSpan.style.background = 'rgba(0, 255, 0, 0.3)';
+
+                setTimeout(() => {
+                    statusSpan.textContent = 'Ready';
+                    statusSpan.style.background = 'rgba(255, 255, 255, 0.2)';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Global scan error:', error);
+                statusSpan.textContent = 'Error';
+                statusSpan.style.background = 'rgba(255, 0, 0, 0.3)';
+                alert('Error processing scan: ' + error.message);
+
+                input.focus(); // Auto-focus back to scan box even on error
+
+                setTimeout(() => {
+                    statusSpan.textContent = 'Ready';
+                    statusSpan.style.background = 'rgba(255, 255, 255, 0.2)';
+                }, 2000);
+            }
+        }
+
+        // Process code for global scan (similar to processCode but with global context)
+        async function processCodeGlobal(code, userName) {
+            // Find the equipment
+            const item = equipment.find(eq => eq.id === code);
+            if (!item) {
+                throw new Error('Equipment not found');
+            }
+
+            let location = '';
+            let quantity = 1;
+            let eventId = ''; // No pre-selected event in global scan
+
+            const total = item.quantity || 1;
+            const currentOut = item.quantity_out || 0;
+            const available = total - currentOut;
+
+            let checkingOut = undefined;
+
+            // If multiple quantity items, ask how many
+            if (total > 1) {
+                if (item.status === 'IN') {
+                    checkingOut = true;
+                } else if (item.status === 'OUT') {
+                    checkingOut = false;
+                } else if (item.status === 'PARTIAL') {
+                    const action = confirm(
+                        `${item.name}: ${available} in warehouse, ${currentOut} checked out.\n\n` +
+                        `Click OK to CHECK OUT more items.\n` +
+                        `Click CANCEL to CHECK IN returning items.`
+                    );
+                    checkingOut = action;
+                }
+
+                if (checkingOut) {
+                    quantity = prompt(`How many ${item.name} to check out? (Available: ${available})`, '1');
+                    if (quantity === null) return;
+                    quantity = parseInt(quantity) || 1;
+
+                    if (quantity > available) {
+                        alert(`Only ${available} available!`);
+                        return;
+                    }
+
+                    // Always ask for event in global scan
+                    const selection = await selectEventForScan(item.name);
+                    if (selection === null) return;
+                    eventId = selection.eventId || '';
+                    location = selection.location || 'Unknown';
+                } else {
+                    quantity = prompt(`How many ${item.name} to check in? (Out: ${currentOut})`, currentOut);
+                    if (quantity === null) return;
+                    quantity = parseInt(quantity) || 1;
+
+                    if (quantity > currentOut) {
+                        quantity = currentOut;
+                    }
+                }
+            } else {
+                // Single item
+                if (item.status === 'IN') {
+                    checkingOut = true;
+                    const selection = await selectEventForScan(item.name);
+                    if (selection === null) return;
+                    eventId = selection.eventId || '';
+                    location = selection.location || 'Unknown';
+                } else if (item.status === 'OUT' || item.status === 'PARTIAL') {
+                    checkingOut = false;
+                }
+            }
+
+            // Determine explicit action
+            let explicitAction = 'CHECK_OUT';
+            if (checkingOut !== undefined) {
+                explicitAction = checkingOut ? 'CHECK_OUT' : 'CHECK_IN';
+            } else {
+                if (item.status === 'OUT' || (item.status === 'PARTIAL' && currentOut > 0 && !checkingOut)) {
+                    explicitAction = 'CHECK_IN';
+                }
+            }
+
+            // Send to backend
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        location: location,
+                        event_id: eventId,
+                        scanned_by: userName,
+                        quantity: quantity,
+                        action: explicitAction
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Show success notification
+                    showGlobalNotification(data.message, 'success');
+
+                    // Reload data
+                    loadEquipment();
+                    loadRecentActivity();
+                    if (eventId) {
+                        loadEvents();
+                    }
+                } else {
+                    throw new Error(data.error || 'Scan failed');
+                }
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Show notification for global scan
+        function showGlobalNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-size: 16px;
+                font-weight: bold;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Add CSS animations for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Allow Enter key to trigger scan and auto-focus management
+        document.addEventListener('DOMContentLoaded', function () {
+            const globalInput = document.getElementById('global-scan-input');
+            if (globalInput) {
+                // Auto-focus on page load
+                globalInput.focus();
+
+                // Handle Enter key
+                globalInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        processGlobalScan();
+                    }
+                });
+
+                // Re-focus after scan completes
+                globalInput.addEventListener('blur', function () {
+                    // Re-focus after a short delay (unless user clicked elsewhere intentionally)
+                    setTimeout(() => {
+                        // Only re-focus if no other input/textarea is focused
+                        const activeElement = document.activeElement;
+                        if (activeElement.tagName !== 'INPUT' &&
+                            activeElement.tagName !== 'TEXTAREA' &&
+                            activeElement.tagName !== 'SELECT') {
+                            globalInput.focus();
+                        }
+                    }, 100);
+                });
+            }
+        });
+
+        // Global keypress handler - capture all typing and redirect to scan box
+        document.addEventListener('keydown', function (e) {
+            const globalInput = document.getElementById('global-scan-input');
+            const activeElement = document.activeElement;
+
+            // Don't intercept if user is typing in another input field
+            if (activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.tagName === 'SELECT') {
+                return;
+            }
+
+            // Don't intercept if it's a modifier key or special key
+            if (e.ctrlKey || e.altKey || e.metaKey) {
+                return;
+            }
+
+            // Don't intercept if it's just a navigation key
+            const navigationKeys = ['Tab', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
+            if (navigationKeys.includes(e.key)) {
+                return;
+            }
+
+            // For any other key (letters, numbers, etc.), focus the scan box
+            if (globalInput && e.key.length === 1) {
+                globalInput.focus();
+                // Let the character be typed in the now-focused input
+            }
+        });
+
+        // ==================== SCANNER TAB FUNCTIONS ====================
 
         // Manual scan
         function processManualScan() {
